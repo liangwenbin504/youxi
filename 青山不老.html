@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青山不老 - 专项练习游戏（优化版）</title>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f5f9f7; }
+        .game-container { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: relative; }
+        .title { text-align: center; color: #2d6a4f; font-size: 28px; margin-bottom: 30px; font-weight: bold; }
+        .progress-container { margin-bottom: 30px; }
+        .progress-bar { height: 8px; background: #e8f4f0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #2d6a4f; width: 0%; transition: width 0.3s ease; }
+        .progress-text { text-align: right; color: #2d6a4f; margin-top: 5px; font-size: 14px; }
+        .section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #e8f4f0; }
+        .section-title { color: #2d6a4f; font-size: 22px; margin-bottom: 20px; display: flex; align-items: center; }
+        .section-title i { margin-right: 10px; font-style: normal; background: #2d6a4f; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+        .question { margin-bottom: 25px; padding: 15px; background: #f8fcf9; border-radius: 8px; position: relative; }
+        .question::after { content: attr(data-qid); position: absolute; top: 10px; right: 15px; color: #999; font-size: 12px; }
+        .question-title { font-size: 18px; margin-bottom: 15px; color: #2c3e50; font-weight: 500; }
+        .question-score { color: #e74c3c; font-size: 14px; margin-left: 10px; font-weight: normal; }
+        .option { margin-bottom: 10px; display: flex; align-items: center; cursor: pointer; }
+        .option input { margin-right: 10px; width: 18px; height: 18px; }
+        .option label { font-size: 16px; color: #34495e; }
+        .option.correct { color: #27ae60; font-weight: bold; }
+        .option.incorrect { color: #e74c3c; }
+        .input-group { margin-bottom: 15px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #d1e7dd; border-radius: 6px; font-size: 16px; }
+        .input-group textarea { width: 100%; padding: 12px; border: 1px solid #d1e7dd; border-radius: 6px; font-size: 16px; min-height: 100px; resize: vertical; }
+        .input-group .correct-hint { margin-top: 8px; font-size: 14px; color: #27ae60; }
+        .table-container { overflow-x: auto; margin: 15px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        table th, table td { border: 1px solid #d1e7dd; padding: 12px; text-align: left; font-size: 16px; }
+        table th { background: #e8f4f0; color: #2d6a4f; }
+        .btn-group { display: flex; justify-content: center; gap: 20px; margin: 30px 0; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
+        .btn-submit { background: #2d6a4f; color: white; }
+        .btn-submit:hover { background: #1e4d3b; }
+        .btn-reset { background: #95a5a6; color: white; }
+        .btn-reset:hover { background: #7f8c8d; }
+        /* 返回按钮样式 */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 123, 255, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .back-button:hover {
+            background-color: rgba(0, 86, 179, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .result { text-align: center; font-size: 20px; margin-top: 30px; color: #2d6a4f; font-weight: bold; padding: 20px; background: #f8fcf9; border-radius: 8px; }
+        /* 错题解析弹窗 */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .modal.show { opacity: 1; visibility: visible; }
+        .modal-content { background: white; width: 90%; max-width: 800px; border-radius: 12px; padding: 30px; max-height: 80vh; overflow-y: auto; }
+        .modal-title { color: #2d6a4f; font-size: 22px; margin-bottom: 20px; border-bottom: 1px solid #e8f4f0; padding-bottom: 10px; }
+        .error-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e8f4f0; }
+        .error-qid { color: #e74c3c; font-weight: bold; margin-bottom: 5px; }
+        .error-content { margin-bottom: 8px; font-size: 16px; }
+        .error-your-answer { color: #7f8c8d; font-size: 14px; margin-bottom: 5px; }
+        .error-correct-answer { color: #27ae60; font-size: 14px; margin-bottom: 5px; }
+        .error-analysis { color: #34495e; font-size: 14px; }
+        .btn-close { display: block; margin: 20px auto 0; padding: 10px 25px; background: #2d6a4f; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .highlight-box { background: #fff8e1; border-left: 4px solid #ffb74d; padding: 10px; margin: 15px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">青山不老 - 专项练习游戏</h1>
+
+        <!-- 答题进度条 -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">已完成：0/4 题</div>
+        </div>
+
+        <!-- 一、基础再现 -->
+        <div class="section">
+            <h2 class="section-title"><i>1</i>基础再现（准确认读字词，体会课文情感和标题含义）</h2>
+            
+            <div class="question" data-qid="Q1（3分）">
+                <div class="question-title">1. 下列加点字读音不正确的是哪一项<span class="question-score">(3分)</span></div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q1" id="q1a">
+                    <label for="q1a">A. 环境：狂风肆虐(nüè) 干旱盘踞(jù)</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q1" id="q1b">
+                    <label for="q1b">B. 工具：铁锹(qiāo) 拄拐杖(zhǔ)</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q1" id="q1c">
+                    <label for="q1c">C. 结果：绿树劲挺(jìn) 碧波粼粼(lín)</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q1" id="q1d">
+                    <label for="q1d">D. 成就：载入史册(zǎi) 擎起青山(qíng)</label>
+                </div>
+            </div>
+
+            <div class="question" data-qid="Q2（6分）">
+                <div class="question-title">2. 填表示“多”的四字词语，补全对林业英模人物事迹的记录<span class="question-score">(6分)</span></div>
+                <div class="input-group">
+                    <label>在这片荒地上，他________（形容时间久）坚守。虽然________（形容次数多）遭遇风沙侵袭，但他从未放弃。他种下的树苗________（形容数量多），每一棵都承载着希望。</label>
+                    <input type="text" id="q2Input" placeholder="依次输入三个四字词语，用逗号分隔">
+                    <div class="correct-hint" id="q2Hint"></div>
+                </div>
+            </div>
+
+            <div class="question" data-qid="Q3（5分）">
+                <div class="question-title">3. 品读句子，完成练习<span class="question-score">(5分)</span></div>
+                <div class="question-title" style="font-size:16px; margin-bottom:10px;">①十五年啊，绿化了八条沟，造了七条防风林带、三千七百亩林网，这是多么了不起的奇迹。②青山是不会老的。</div>
+                <div class="input-group">
+                    <label>（1）这两句话都表达了对老人的________之情。句①使用了一连串的数字，我从中能体会到________________________________（3分）</label>
+                    <textarea id="q3aInput" placeholder="请依次回答两个问题，用逗号分隔"></textarea>
+                </div>
+                <div class="question-title" style="font-size:16px; margin-top:15px; margin-bottom:10px;">（2）下面对句②理解不正确的是哪一项（2分）</div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b1">
+                    <label for="q3b1">A. “青山”表面上指老人种树的奇迹</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b2">
+                    <label for="q3b2">B. 表达对自然万物生生不息的赞颂</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b3">
+                    <label for="q3b3">C. “青山”象征老人的精神像青山一样充满生机</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b4">
+                    <label for="q3b4">D. 饱含对造林英雄的敬佩和祝福</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 二、阅读提高 -->
+        <div class="section">
+            <h2 class="section-title"><i>2</i>阅读提高（感悟人物品质，体会写法）</h2>
+            
+            <div class="question" data-qid="Q4（11分）">
+                <div class="question-title">阅读林业英雄郭万刚的故事，完成练习<span class="question-score">(11分)</span></div>
+                <div class="highlight-box">
+                    刚开始，没有资金，没有经验，他就用“一银沙、一棵树”的土办法造林。可没想到，几场大风铺天盖地刮过，近一半的树苗就被沙子埋掉了。收拾着风干的死树苗，郭万刚心里不是个滋味。但望着那些发芽的活树苗，他并没有灰心：“只要有活的苗，就说明这个沙能治！”经过反复摸索，他终于总结出了“一棵树，一把草，压住沙子防风掏”的治沙方法。<br>
+                    春秋时节，是压沙栽树的黄金期。为了赶进度，郭万刚索性卷起铺盖住进沙窝里。没有房子，他就在沙地上挖个壕沟，用柴草搭出个地窝销住；没有炉子，就用三块石头支口锅，开水泡馍当饭吃。大风一起，沙子刮到他锅碗里，吃到嘴里，把牙路得吱吱响。<br>
+                    皇天不负有心人，小树苗好像也被治沙人感动了一样，互相依偎着，坚持着，慢慢成活了。望着一棵棵亲手栽种的花棒、梭梭长出了芽，郭万刚高兴地笑了，吃的苦总算有了回报！
+                </div>
+
+                <div class="question-title" style="font-size:16px; margin-top:15px; margin-bottom:10px;">（1）补全表格（6分）</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>遇到的困难</th>
+                                <th>克服困难的方法</th>
+                                <th>人物品质</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>树苗被埋</td>
+                                <td><input type="text" id="q4a1" placeholder="请填写"></td>
+                                <td rowspan="3"><input type="text" id="q4a4" placeholder="请填写（至少2个词语）"></td>
+                            </tr>
+                            <tr>
+                                <td>没有房子</td>
+                                <td>挖壕沟，用柴草搭地窝棚</td>
+                            </tr>
+                            <tr>
+                                <td>没有炉子</td>
+                                <td><input type="text" id="q4a3" placeholder="请填写"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="question-title" style="font-size:16px; margin-top:15px; margin-bottom:10px;">（2）用“____”画出文中描写环境恶劣的语句，说说作者这样写的好处是什么（5分）</div>
+                <div class="input-group">
+                    <label>画出的语句：________________________________</label>
+                    <textarea id="q4b1Input" placeholder="请摘抄文中语句"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>好处：________________________________</label>
+                    <textarea id="q4b2Input" placeholder="请分析好处"></textarea>
+                    <div class="correct-hint" id="q4Hint"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="btn-group">
+            <button class="btn btn-submit" onclick="submitAnswer()">提交答案</button>
+            <button class="btn btn-reset" onclick="resetAnswer()">重新答题</button>
+        </div>
+
+        <!-- 得分结果 -->
+        <div class="result" id="result"></div>
+
+        <!-- 错题解析弹窗 -->
+        <div class="modal" id="errorModal">
+            <div class="modal-content">
+                <h3 class="modal-title">错题解析</h3>
+                <div id="errorList"></div>
+                <button class="btn-close" onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 正确答案库（含解析）
+        const answerBank = {
+            q1: {
+                correct: "C",
+                analysis: "C项“绿树劲挺”的“劲”表“坚强有力”时读jìng，而非jìn；A、B、D项读音均正确。"
+            },
+            q2: {
+                correct: "长年累月,屡次三番,不计其数",
+                hint: "正确答案：长年累月（形容时间久）、屡次三番（形容次数多）、不计其数（形容数量多）（每空2分，意思相近的四字词语也可得分）",
+                analysis: "需结合语境选择表“多”的四字词语，“长年累月”侧重时间跨度长，“屡次三番”侧重次数频繁，“不计其数”侧重数量极多，符合治沙造林的语境特点。"
+            },
+            q3a: {
+                correct: "敬佩与赞美,老人治沙时间之长、规模之大、成效之显著，体现了老人的坚韧不拔和无私奉献",
+                hint: "得分要点：①情感：敬佩、赞美（1分）；②体会：时间长、规模大、成效显著、坚韧不拔等（2分），答出核心意思即可",
+                analysis: "句①通过“十五年”“八条沟”“七条防风林带”“三千七百亩”等具体数字，直观展现老人治沙的艰辛与执着，表达对老人的敬佩；句②是全文主旨，既指青山永存，更指老人的精神不朽。"
+            },
+            q3b: {
+                correct: "B",
+                analysis: "“青山是不会老的”核心是赞美老人的治沙精神永垂不朽，而非单纯赞颂自然万物生生不息；A、C、D项均准确理解了句子的象征意义和情感内涵。"
+            },
+            q4a1: {
+                correct: "总结出“一棵树，一把草，压住沙子防风掏”的治沙方法",
+                analysis: "从文中“经过反复摸索，他终于总结出了‘一棵树，一把草，压住沙子防风掏’的治沙方法”可直接提取答案，体现郭万刚善于思考、勇于探索的品质。"
+            },
+            q4a3: {
+                correct: "用三块石头支口锅，开水泡馍当饭吃",
+                analysis: "根据文中“没有炉子，就用三块石头支口锅，开水泡馍当饭吃”提取答案，展现了治沙条件的艰苦和郭万刚的吃苦耐劳。"
+            },
+            q4a4: {
+                correct: "坚韧不拔、吃苦耐劳、善于摸索、无私奉献",
+                hint: "得分要点：答出2个及以上符合人物形象的词语（如坚韧不拔、吃苦耐劳等），每个词语1分，共2分",
+                analysis: "从“不灰心”“反复摸索”可看出坚韧不拔、善于摸索；从“住进沙窝”“开水泡馍”可看出吃苦耐劳；整体治沙行为体现无私奉献。"
+            },
+            q4b1: {
+                correct: "几场大风铺天盖地刮过，近一半的树苗就被沙子埋掉了。大风一起，沙子刮到他锅碗里，吃到嘴里，把牙硌得吱吱响。",
+                analysis: "这两句直接描写风沙的猛烈和治沙环境的恶劣，是文中典型的环境描写句。"
+            },
+            q4b2: {
+                correct: "通过描写恶劣的环境，突出了郭万刚治沙的艰难，衬托出他坚韧不拔、吃苦耐劳的精神品质，让人物形象更鲜明",
+                hint: "得分要点：①突出治沙艰难（1分）；②衬托人物品质（2分）；③人物形象更鲜明（1分），共4分",
+                analysis: "环境描写的核心作用是烘托人物，此处恶劣环境与郭万刚的坚持形成对比，既突出了治沙的不易，又让他的英雄形象更具感染力。"
+            }
+        };
+
+        // 2. 页面加载时恢复答题进度
+        window.onload = function() {
+            loadProgress();
+            updateProgress();
+        };
+
+        // 3. 保存答题进度到localStorage
+        function saveProgress() {
+            const progress = {
+                q1: document.querySelector('input[name="q1"]:checked')?.id.slice(-1) || "",
+                q2: document.getElementById("q2Input").value,
+                q3a: document.getElementById("q3aInput").value,
+                q3b: document.querySelector('input[name="q3b"]:checked')?.id.slice(-1) || "",
+                q4a1: document.getElementById("q4a1").value,
+                q4a3: document.getElementById("q4a3").value,
+                q4a4: document.getElementById("q4a4").value,
+                q4b1: document.getElementById("q4b1Input").value,
+                q4b2: document.getElementById("q4b2Input").value
+            };
+            localStorage.setItem("qingshanGameProgress", JSON.stringify(progress));
+        }
+
+        // 4. 加载答题进度
+        function loadProgress() {
+            const savedProgress = localStorage.getItem("qingshanGameProgress");
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                // 单选题恢复
+                if (progress.q1) document.getElementById(`q1${progress.q1}`).checked = true;
+                if (progress.q3b) document.getElementById(`q3b${progress.q3b}`).checked = true;
+                // 填空题恢复
+                document.getElementById("q2Input").value = progress.q2 || "";
+                document.getElementById("q3aInput").value = progress.q3a || "";
+                document.getElementById("q4a1").value = progress.q4a1 || "";
+                document.getElementById("q4a3").value = progress.q4a3 || "";
+                document.getElementById("q4a4").value = progress.q4a4 || "";
+                document.getElementById("q4b1Input").value = progress.q4b1 || "";
+                document.getElementById("q4b2Input").value = progress.q4b2 || "";
+            }
+        }
+
+        // 5. 更新答题进度条
+        function updateProgress() {
+            const totalQuestions = 4; // 总题数
+            let completed = 0;
+
+            // 统计已答题数量
+            if (document.querySelector('input[name="q1"]:checked')) completed++;
+            if (document.getElementById("q2Input").value.trim()) completed++;
+            if (document.getElementById("q3aInput").value.trim() || document.querySelector('input[name="q3b"]:checked')) completed++;
+            if (document.getElementById("q4a1").value.trim() && document.getElementById("q4a3").value.trim() && document.getElementById("q4a4").value.trim() && document.getElementById("q4b1Input").value.trim() && document.getElementById("q4b2Input").value.trim()) completed++;
+
+            // 更新进度条和文本
+            const progressRate = (completed / totalQuestions) * 100;
+            document.getElementById("progressFill").style.width = `${progressRate}%`;
+            document.getElementById("progressText").textContent = `已完成：${completed}/${totalQuestions} 题`;
+
+            // 自动保存进度
+            saveProgress();
+        }
+
+        // 6. 实时监听答题行为，更新进度
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', updateProgress);
+            el.addEventListener('change', updateProgress);
+        });
+
+        // 7. 提交答案，自动批改+错题解析
+        function submitAnswer() {
+            let totalScore = 0; // 总分25分
+            const errorList = []; // 错题列表
+
+            // 批改逻辑（按题目顺序）
+            // Q1（3分）
+            const q1User = document.querySelector('input[name="q1"]:checked')?.id.slice(-1) || "";
+            const q1Correct = answerBank.q1.correct;
+            let q1Score = 0;
+            if (q1User === q1Correct) {
+                q1Score = 3;
+                document.querySelector(`input[name="q1"]#q1${q1Correct}`).parentNode.classList.add("correct");
+            } else {
+                if (q1User) document.querySelector(`input[name="q1"]#q1${q1User}`).parentNode.classList.add("incorrect");
+                document.querySelector(`input[name="q1"]#q1${q1Correct}`).parentNode.classList.add("correct");
+                errorList.push({
+                    qid: "Q1（3分）",
+                    content: "加点字读音判断",
+                    userAnswer: q1User ? `选项${q1User}` : "未作答",
+                    correctAnswer: `选项${q1Correct}`,
+                    analysis: answerBank.q1.analysis
+                });
+            }
+            totalScore += q1Score;
+
+            // Q2（6分）
+            const q2User = document.getElementById("q2Input").value.trim().toLowerCase();
+            const q2Correct = answerBank.q2.correct.toLowerCase();
+            let q2Score = 0;
+            const userWords = q2User.split(",").map(w => w.trim());
+            const correctWords = q2Correct.split(",").map(w => w.trim());
+            // 允许意思相近的词语
+            const similarWords = {
+                "长年累月": ["长年累月", "日积月累", "日久天长"],
+                "屡次三番": ["屡次三番", "三番五次", "多次反复"],
+                "不计其数": ["不计其数", "数不胜数", "不可胜数"]
+            };
+            let correctCount = 0;
+            userWords.forEach((word, idx) => {
+                if (similarWords[correctWords[idx]].includes(word)) correctCount++;
+            });
+            q2Score = correctCount * 2;
+            document.getElementById("q2Hint").textContent = answerBank.q2.hint;
+            if (q2Score < 6) {
+                errorList.push({
+                    qid: "Q2（6分）",
+                    content: "填写表示“多”的四字词语",
+                    userAnswer: q2User || "未作答",
+                    correctAnswer: answerBank.q2.correct,
+                    analysis: answerBank.q2.analysis
+                });
+            }
+            totalScore += q2Score;
+
+            // Q3a（3分）
+            const q3aUser = document.getElementById("q3aInput").value.trim();
+            let q3aScore = 0;
+            if (q3aUser.includes("敬佩") || q3aUser.includes("赞美") || q3aUser.includes("赞颂")) {
+                q3aScore += 1;
+            }
+            if (q3aUser.includes("时间长") || q3aUser.includes("规模大") || q3aUser.includes("成效显著") || q3aUser.includes("坚韧不拔")) {
+                q3aScore += 2;
+            }
+            document.getElementById("q3aHint").textContent = answerBank.q3a.hint;
+            if (q3aScore < 3) {
+                errorList.push({
+                    qid: "Q3a（3分）",
+                    content: "品读句子体会情感与数字作用",
+                    userAnswer: q3aUser || "未作答",
+                    correctAnswer: answerBank.q3a.correct,
+                    analysis: answerBank.q3a.analysis
+                });
+            }
+            totalScore += q3aScore;
+
+            // Q3b（2分）
+            const q3bUser = document.querySelector('input[name="q3b"]:checked')?.id.slice(-1) || "";
+            const q3bCorrect = answerBank.q3b.correct;
+            let q3bScore = 0;
+            if (q3bUser === q3bCorrect) {
+                q3bScore = 2;
+                document.querySelector(`input[name="q3b"]#q3b${q3bCorrect}`).parentNode.classList.add("correct");
+            } else {
+                if (q3bUser) document.querySelector(`input[name="q3b"]#q3b${q3bUser}`).parentNode.classList.add("incorrect");
+                document.querySelector(`input[name="q3b"]#q3b${q3bCorrect}`).parentNode.classList.add("correct");
+                errorList.push({
+                    qid: "Q3b（2分）",
+                    content: "句子含义理解判断",
+                    userAnswer: q3bUser ? `选项${q3bUser}` : "未作答",
+                    correctAnswer: `选项${q3bCorrect}`,
+                    analysis: answerBank.q3b.analysis
+                });
+            }
+            totalScore += q3bScore;
+
+            // Q4a（6分）
+            const q4a1User = document.getElementById("q4a1").value.trim();
+            const q4a1Correct = answerBank.q4a1.correct;
+            const q4a3User = document.getElementById("q4a3").value.trim();
+            const q4a3Correct = answerBank.q4a3.correct;
+            const q4a4User = document.getElementById("q4a4").value.trim();
+            const q4a4Correct = answerBank.q4a4.correct;
+            let q4aScore = 0;
+
+            // 批改q4a1（2分）
+            if (q4a1User === q4a1Correct || q4a1User.includes("一棵树，一把草") || q4a1User.includes("压住沙子防风掏")) {
+                q4aScore += 2;
+            } else {
+                errorList.push({
+                    qid: "Q4a1（2分）",
+                    content: "补全表格-克服树苗被埋的方法",
+                    userAnswer: q4a1User || "未作答",
+                    correctAnswer: q4a1Correct,
+                    analysis: answerBank.q4a1.analysis
+                });
+            }
+
+            // 批改q4a3（2分）
+            if (q4a3User === q4a3Correct || q4a3User.includes("三块石头支锅") || q4a3User.includes("开水泡馍")) {
+                q4aScore += 2;
+            } else {
+                errorList.push({
+                    qid: "Q4a3（2分）",
+                    content: "补全表格-克服没有炉子的方法",
+                    userAnswer: q4a3User || "未作答",
+                    correctAnswer: q4a3Correct,
+                    analysis: answerBank.q4a3.analysis
+                });
+            }
+
+            // 批改q4a4（2分）
+            const q4a4Words = q4a4User.split("、").map(w => w.trim());
+            const correctQualities = q4a4Correct.split("、");
+            let qualityCount = 0;
+            q4a4Words.forEach(word => {
+                if (correctQualities.includes(word)) qualityCount++;
+            });
+            if (qualityCount >= 2) {
+                q4aScore += 2;
+            } else {
+                q4aScore += qualityCount;
+                errorList.push({
+                    qid: "Q4a4（2分）",
+                    content: "补全表格-人物品质",
+                    userAnswer: q4a4User || "未作答",
+                    correctAnswer: q4a4Correct,
+                    analysis: answerBank.q4a4.analysis
+                });
+            }
+            totalScore += q4aScore;
+
+            // Q4b（5分）
+            const q4b1User = document.getElementById("q4b1Input").value.trim();
+            const q4b1Correct = answerBank.q4b1.correct;
+            const q4b2User = document.getElementById("q4b2Input").value.trim();
+            const q4b2Correct = answerBank.q4b2.correct;
+            let q4bScore = 0;
+
+            // 批改q4b1（1分）
+            if (q4b1User === q4b1Correct || (q4b1User.includes("大风铺天盖地") && q4b1User.includes("沙子刮到锅碗里"))) {
+                q4bScore += 1;
+            } else {
+                errorList.push({
+                    qid: "Q4b1（1分）",
+                    content: "画出环境恶劣的语句",
+                    userAnswer: q4b1User || "未作答",
+                    correctAnswer: q4b1Correct,
+                    analysis: answerBank.q4b1.analysis
+                });
+            }
+
+            // 批改q4b2（4分）
+            if (q4b2User.includes("艰难") && q4b2User.includes("人物品质") && q4b2User.includes("形象鲜明")) {
+                q4bScore += 4;
+            } else if (q4b2User.includes("艰难") && q4b2User.includes("人物品质")) {
+                q4bScore += 3;
+            } else if (q4b2User.includes("艰难") || q4b2User.includes("人物品质")) {
+                q4bScore += 2;
+            } else if (q4b2User) {
+                q4bScore += 1;
+            }
+            document.getElementById("q4Hint").textContent = answerBank.q4b2.hint;
+            if (q4bScore < 5) {
+                errorList.push({
+                    qid: "Q4b2（4分）",
+                    content: "分析环境描写的好处",
+                    userAnswer: q4b2User || "未作答",
+                    correctAnswer: q4b2Correct,
+                    analysis: answerBank.q4b2.analysis
+                });
+            }
+            totalScore += q4bScore;
+
+            // 显示总分
+            document.getElementById("result").textContent = `你的得分：${totalScore}/25 分！${errorList.length > 0 ? `共错${errorList.length}题，点击查看错题解析` : "全部答对，真棒！"}`;
+
+            // 显示返回按钮
+            document.getElementById('back-btn').style.display = 'block';
+
+            // 显示错题解析弹窗
+            if (errorList.length > 0) {
+                showErrorModal(errorList);
+            }
+        }
+
+        // 8. 显示错题解析弹窗
+        function showErrorModal(errors) {
+            const errorListEl = document.getElementById("errorList");
+            errorListEl.innerHTML = "";
+            errors.forEach(error => {
+                const errorItem = document.createElement("div");
+                errorItem.className = "error-item";
+                errorItem.innerHTML = `
+                    <div class="error-qid">${error.qid}</div>
+                    <div class="error-content">${error.content}</div>
+                    <div class="error-your-answer">你的答案：${error.userAnswer}</div>
+                    <div class="error-correct-answer">正确答案：${error.correctAnswer}</div>
+                    <div class="error-analysis">解析：${error.analysis}</div>
+                `;
+                errorListEl.appendChild(errorItem);
+            });
+            document.getElementById("errorModal").classList.add("show");
+        }
+
+        // 9. 关闭弹窗
+        function closeModal() {
+            document.getElementById("errorModal").classList.remove("show");
+        }
+
+        // 10. 重新答题
+        function resetAnswer() {
+            // 清空所有输入和选择
+            document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+            document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = "");
+            document.querySelectorAll('.option.correct, .option.incorrect').forEach(el => el.classList.remove("correct", "incorrect"));
+            document.querySelectorAll('.correct-hint').forEach(el => el.textContent = "");
+            document.getElementById("result").textContent = "";
+            // 清空进度保存
+            localStorage.removeItem("qingshanGameProgress");
+            // 更新进度条
+            updateProgress();
+            // 隐藏返回按钮
+            document.getElementById('back-btn').style.display = 'none';
+        }
+        
+    </script>
+    <!-- 返回按钮 -->
+    <button id="back-btn" class="back-button">返回主界面</button>
+    <script>
+        // 返回按钮点击事件
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倡议书写作闯关游戏</title>
+    <style>
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .level {
+            display: none;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-bottom: 20px;
+        }
+        .level.active {
+            display: block;
+        }
+        .question {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .options {
+            margin-bottom: 20px;
+        }
+        .option {
+            display: block;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #e6f7ff;
+        }
+        .option.selected {
+            background-color: #b3e0ff;
+            border-color: #409eff;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #409eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .btn:hover {
+            background-color: #1890ff;
+        }
+        .level-nav {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .nav-btn.active {
+            background-color: #409eff;
+            color: white;
+        }
+        .original-text {
+            background-color: #fff8e1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+        #success {
+            display: none;
+            text-align: center;
+            padding: 50px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .score-box {
+            font-size: 24px;
+            color: #e6a23c;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .comment-box {
+            font-size: 24px; /* 字体放大 */
+            color: red; /* 字体红色 */
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-radius: 4px;
+            font-weight: bold; /* 加粗更醒目 */
+        }
+        /* 错题分析样式 */
+        .error-analysis {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            border: 1px solid #ffcdd2;
+            text-align: left;
+        }
+        .error-analysis h3 {
+            color: #c62828;
+            margin-top: 0;
+            text-align: center;
+        }
+        .error-item {
+            margin: 15px 0;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ffcdd2;
+        }
+        .error-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .error-question {
+            font-weight: bold;
+            color: #333;
+        }
+        .error-user, .error-correct {
+            margin: 5px 0;
+        }
+        .error-correct span {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+    </style>
+    <style>
+        /* 返回按钮样式 */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .back-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>倡议书写作闯关游戏</h1>
+        <!-- 关卡导航 -->
+        <div class="level-nav">
+            <button class="nav-btn active" data-level="1">关卡1：审题训练</button>
+            <button class="nav-btn" data-level="2">关卡2：选材训练</button>
+            <button class="nav-btn" data-level="3">关卡3：构思训练</button>
+            <button class="nav-btn" data-level="4">关卡4：写法训练</button>
+        </div>
+
+        <!-- 关卡1：审题训练 -->
+        <div class="level active" id="level1">
+            <h2>关卡1：审题训练</h2>
+            <div class="original-text">
+                原文：1. 审题训练：填一填，选一选，明确本次习作的任务。<br>
+                (1) 审清体裁：本次习作属于（记叙文 应用文 说明文）。<br>
+                (2) 审清内容：“倡议”二字的意思是（）。<br>
+                A. 向别人多次提出意见 B. 向别人首先提出建议 C. 命令别人做某事
+            </div>
+            <!-- 题目1：审题体裁 -->
+            <div class="question-item">
+                <div class="question">1. 本次倡议书习作属于哪一类体裁？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 记叙文</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 应用文</div>
+                    <div class="option" data-answer="3">C. 说明文</div>
+                    <div class="option" data-answer="4">D. 议论文</div>
+                </div>
+            </div>
+            <!-- 题目2：倡议含义 -->
+            <div class="question-item">
+                <div class="question">2. “倡议”二字的正确意思是？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 向别人多次提出意见</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 向别人首先提出建议</div>
+                    <div class="option" data-answer="3">C. 命令别人做某事</div>
+                    <div class="option" data-answer="4">D. 接受别人的意见</div>
+                </div>
+            </div>
+            <button class="btn next-btn" data-next="2">下一步</button>
+        </div>
+
+        <!-- 关卡2：选材训练 -->
+        <div class="level" id="level2">
+            <h2>关卡2：选材训练</h2>
+            <div class="original-text">
+                原文：2. 选材训练：下列材料中，哪些可以作为倡议书的内容？打“√”。<br>
+                (1) 大家自觉做好垃圾分类。（）(2) 在家里主动做力所能及的家务。（）<br>
+                (3) 妈妈不眠不休照顾生病的我。（）(4) 积极参加社区打扫卫生的活动。（）
+            </div>
+            <!-- 题目3：选材判断（多选） -->
+            <div class="question-item">
+                <div class="question">下列哪些材料适合作为倡议书的内容？（可多选）</div>
+                <div class="options">
+                    <div class="option" data-answer="1" data-correct="true">A. 大家自觉做好垃圾分类</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 在家里主动做力所能及的家务</div>
+                    <div class="option" data-answer="3">C. 妈妈不眠不休照顾生病的我</div>
+                    <div class="option" data-answer="4" data-correct="true">D. 积极参加社区打扫卫生的活动</div>
+                    <div class="option" data-answer="5">E. 要求同学必须每天阅读1小时</div>
+                </div>
+            </div>
+            <button class="btn next-btn" data-next="3">下一步</button>
+        </div>
+
+        <!-- 关卡3：构思训练 -->
+        <div class="level" id="level3">
+            <h2>关卡3：构思训练</h2>
+            <div class="original-text">
+                原文：3. 构思训练：下面是倡议书的格式，根据自己的构思，把内容补充完整。<br>
+                “倡议书标题<br>
+                称呼<br>
+                分条写清楚倡议的内容<br>
+                最后署名，并写上日期
+            </div>
+            <!-- 题目4：格式顺序 -->
+            <div class="question-item">
+                <div class="question">倡议书的正确格式顺序是？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 称呼 → 倡议书标题 → 倡议内容 → 署名+日期</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 倡议书标题 → 称呼 → 倡议内容 → 署名+日期</div>
+                    <div class="option" data-answer="3">C. 倡议内容 → 倡议书标题 → 称呼 → 署名+日期</div>
+                    <div class="option" data-answer="4">D. 倡议书标题 → 倡议内容 → 称呼 → 署名+日期</div>
+                </div>
+            </div>
+            <button class="btn next-btn" data-next="4">下一步</button>
+        </div>
+
+        <!-- 关卡4：写法训练 -->
+        <div class="level" id="level4">
+            <h2>关卡4：写法训练</h2>
+            <div class="original-text">
+                原文：4. 写法训练：正文是倡议书中最重要的部分，根据要求完成练习。<br>
+                (1) 写清现状及问题所在，明确倡议的重要性。<br>
+                地球是人类赖以生存的家园，生态环境是人类发展的基础。随着全球经济现代化程度的加深和工业文明的不断推进，环境问题也越来越严重，各种能耗和污染物排放日益危及地球生态平衡和人类生存的根基。为了保护我们共同的家园，六年级（2）班向全体师生及家长发出倡议。<br>
+                由以上文字可以看出，提出倡议的原因是：<br>
+                (2) 结尾写一些呼吁性的语言。<br>
+                “倡导绿色生活，构筑低碳未来”是改善生活环境、造福子孙后代的一项长久而艰巨的任务。过去，我们为此作出了不懈的努力。今天，让我们再次携起手来，为了地球的未来，熄灯一小时，减少碳排放。从一点一滴做起，让我们生存的环境更加美好！<br>
+                ① 读了这段文字，我能够感受到倡议的感染力和（）<br>
+                ② 补全下面关于读书的倡议书的结尾。<br>
+                “腹有诗书气自华。”同学们，读书有益，益己，益人，益民族。读书是一种精神，一种力量；更是一种责任，一种使命。读书促学习，促创新，促和谐，促发展。让我们立即行动起来，（）
+            </div>
+            <!-- 题目5：环保倡议原因 -->
+            <div class="question-item">
+                <div class="question">1. 文中提出环保倡议的主要原因是？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 地球风景优美，需要大家欣赏</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 环境问题严重，危及生态平衡和人类生存</div>
+                    <div class="option" data-answer="3">C. 六年级（2）班想要组织活动</div>
+                    <div class="option" data-answer="4">D. 工业文明推进需要更多能源</div>
+                </div>
+            </div>
+            <!-- 题目6：结尾特点判断 -->
+            <div class="question-item">
+                <div class="question">2. 环保倡议结尾文字体现的特点不包括？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 感染力</div>
+                    <div class="option" data-answer="2">B. 号召力</div>
+                    <div class="option" data-answer="3" data-correct="true">C. 强制性</div>
+                    <div class="option" data-answer="4">D. 前瞻性</div>
+                </div>
+            </div>
+            <!-- 题目7：读书倡议结尾 -->
+            <div class="question-item">
+                <div class="question">3. 下列哪项适合作为读书倡议书的结尾？</div>
+                <div class="options">
+                    <div class="option" data-answer="1">A. 每天必须读够2小时，否则会受惩罚</div>
+                    <div class="option" data-answer="2" data-correct="true">B. 让读书成为习惯，让书香浸润心灵</div>
+                    <div class="option" data-answer="3">C. 读书是个人的事，不用和别人分享</div>
+                    <div class="option" data-answer="4">D. 只需要读课本，不用读课外书</div>
+                </div>
+            </div>
+            <button class="btn finish-btn">完成闯关</button>
+        </div>
+
+        <!-- 闯关成功提示（新增得分、红色放大评价、错题分析、再次闯关） -->
+        <div id="success">
+            <h2>🎉 倡议书写作闯关成功！</h2>
+            <div class="score-box" id="score-display">最终得分：0/70</div>
+            <div class="comment-box" id="comment-display">你的评价正在加载中...</div>
+            <!-- 错题分析区域 -->
+            <div class="error-analysis" id="error-analysis"></div>
+            <button class="btn" id="restart-btn">再次闯关</button>
+        </div>
+    </div>
+
+    <script>
+        // 选项选择功能
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                const parentOptions = this.parentElement;
+                const level = this.closest('.level').id;
+                // 关卡2为多选，其他为单选
+                if (level !== 'level2') {
+                    parentOptions.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                }
+                this.classList.toggle('selected');
+            });
+        });
+
+        // 关卡导航切换
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const levelNum = this.getAttribute('data-level');
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.level').forEach(level => level.classList.remove('active'));
+                document.getElementById('level' + levelNum).classList.add('active');
+            });
+        });
+
+        // 下一步按钮功能
+        document.querySelectorAll('.next-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const nextLevel = this.getAttribute('data-next');
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.nav-btn[data-level="${nextLevel}"]`).classList.add('active');
+                document.querySelectorAll('.level').forEach(level => level.classList.remove('active'));
+                document.getElementById('level' + nextLevel).classList.add('active');
+            });
+        });
+
+        // 计算得分并收集错题信息（每题10分，共7题）
+        function calculateScoreAndErrors() {
+            let correctCount = 0;
+            const errors = []; // 存储错题信息：[{question: '', userAnswer: '', correctAnswer: ''}]
+            const questionItems = document.querySelectorAll('.question-item');
+            
+            questionItems.forEach((item, index) => {
+                const questionText = item.querySelector('.question').textContent;
+                const options = item.querySelectorAll('.option');
+                const correctOptions = item.querySelectorAll('.option[data-correct="true"]');
+                const selectedOptions = item.querySelectorAll('.option.selected');
+
+                // 收集用户选择的答案文本
+                const userAnswerText = Array.from(selectedOptions).map(opt => opt.textContent).join('、') || '未选择';
+                // 收集正确答案文本
+                const correctAnswerText = Array.from(correctOptions).map(opt => opt.textContent).join('、');
+
+                // 单选逻辑：选中且是正确选项
+                let isCorrect = false;
+                if (correctOptions.length === 1) {
+                    isCorrect = selectedOptions.length === 1 && selectedOptions[0].hasAttribute('data-correct');
+                }
+                // 多选逻辑：选中的正确选项数量 = 总正确选项数量，且未选错误选项
+                else {
+                    const selectedCorrect = Array.from(selectedOptions).filter(opt => opt.hasAttribute('data-correct'));
+                    isCorrect = selectedCorrect.length === correctOptions.length && selectedOptions.length === correctOptions.length;
+                }
+
+                if (isCorrect) {
+                    correctCount++;
+                } else {
+                    errors.push({
+                        question: questionText,
+                        userAnswer: userAnswerText,
+                        correctAnswer: correctAnswerText
+                    });
+                }
+            });
+
+            return {
+                score: correctCount * 10,
+                errors: errors
+            };
+        }
+
+        // 搞笑评价函数（按分数段匹配）
+        function getFunnyComment(score) {
+            if (score === 70) return '天选写手！倡议书大师非你莫属，直接可以开班授课了～';
+            if (score >= 50) return '牛哇！只差一点点就满分，你就是被学习耽误的倡议小能手！';
+            if (score >= 30) return '还不错哦～再努努力，倡议书写作小达人就是你！';
+            if (score >= 10) return '加油！看来你对倡议书的了解还停留在“面熟”阶段，再闯一次试试～';
+            return '哈哈哈哈重新来过！建议先把倡议书原文抄三遍，下次肯定能进步～';
+        }
+
+        // 渲染错题分析
+        function renderErrorAnalysis(errors) {
+            const errorContainer = document.getElementById('error-analysis');
+            if (errors.length === 0) {
+                errorContainer.innerHTML = '<h3>本次闯关无错题，太厉害啦！</h3>';
+                return;
+            }
+
+            let errorHtml = '<h3>错题分析</h3>';
+            errors.forEach((err, idx) => {
+                errorHtml += `
+                    <div class="error-item">
+                        <div class="error-question">${idx + 1}. ${err.question}</div>
+                        <div class="error-user">你的答案：${err.userAnswer}</div>
+                        <div class="error-correct">正确答案：<span>${err.correctAnswer}</span></div>
+                    </div>
+                `;
+            });
+            errorContainer.innerHTML = errorHtml;
+        }
+
+        // 重置游戏函数（修复核心逻辑：通过active类控制显示，而非直接修改display）
+        function resetGame() {
+            // 1. 隐藏成功提示区域
+            document.getElementById('success').style.display = 'none';
+            // 2. 显示关卡导航栏（恢复默认样式）
+            document.querySelector('.level-nav').style.display = 'flex';
+            // 3. 重置所有选项的选中状态
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            // 4. 重置关卡导航的active类，默认选中关卡1
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.nav-btn[data-level="1"]').classList.add('active');
+            // 5. 重置关卡的active类，默认显示关卡1
+            document.querySelectorAll('.level').forEach(level => level.classList.remove('active'));
+            document.getElementById('level1').classList.add('active');
+        }
+
+        // 完成闯关按钮功能
+        document.querySelector('.finish-btn').addEventListener('click', function() {
+            const result = calculateScoreAndErrors();
+            const totalScore = result.score;
+            const errors = result.errors;
+            const comment = getFunnyComment(totalScore);
+            
+            // 显示得分和红色放大评价
+            document.getElementById('score-display').textContent = `最终得分：${totalScore}/70`;
+            document.getElementById('comment-display').textContent = comment;
+            // 渲染错题分析
+            renderErrorAnalysis(errors);
+
+            // 隐藏关卡导航和所有关卡，显示成功提示
+            document.querySelector('.level-nav').style.display = 'none';
+            document.querySelectorAll('.level').forEach(level => level.classList.remove('active'));
+            document.getElementById('success').style.display = 'block';
+            
+            // 显示返回按钮
+            document.getElementById('back-btn').style.display = 'block';
+        });
+
+        // 再次闯关按钮功能
+        document.getElementById('restart-btn').addEventListener('click', resetGame);
+    </script>
+<!-- 返回按钮 -->
+    <button id="back-btn" class="back-button">返回主界面</button>
+    <script>
+        // 返回按钮点击事件
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+    </body>
+</html>

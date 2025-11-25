@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>《只有一个地球》练习题（学生版）</title>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* 全局样式 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", sans-serif; background: #f5f7fa; padding-top: 20px; padding-bottom: 50px; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 24px; transition: box-shadow 0.3s; }
+    .card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+    
+    /* 按钮样式 */
+    .btn { padding: 12px 24px; border-radius: 8px; cursor: pointer; border: none; font-size: 16px; font-weight: 500; transition: all 0.3s; }
+    .btn-primary { background: #1a73e8; color: white; }
+    .btn-primary:hover { background: #0d62d0; transform: translateY(-2px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary { background: #f1f3f4; color: #202124; }
+    .btn-secondary:hover { background: #e8eaed; }
+    
+    /* 进度条样式 */
+    .progress-bar { height: 6px; background: #e8eaed; border-radius: 3px; margin: 15px 0; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1a73e8; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    /* 选项样式 */
+    .option { border: 1px solid #dadce0; padding: 14px 16px; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; background: #fff; }
+    .option:hover { border-color: #1a73e8; background: #f8fafc; }
+    .option.selected { border-color: #1a73e8; background: #e8f0fe; box-shadow: 0 2px 4px rgba(26, 115, 232, 0.1); }
+    
+    /* 反馈样式 */
+    .feedback { padding: 14px 16px; border-radius: 8px; margin: 12px 0; font-size: 16px; }
+    .feedback.correct { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; }
+    .feedback.wrong { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+    
+    /* 工具类 */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .flex { display: flex; }
+    .justify-between { justify-content: space-between; }
+    .items-center { align-items: center; }
+    .flex-col { flex-direction: column; }
+    .gap-4 { gap: 16px; }
+    .gap-6 { gap: 24px; }
+    .py-10 { padding: 48px 0; }
+    .py-8 { padding: 32px 0; }
+    .text-2xl { font-size: 28px; }
+    .text-xl { font-size: 22px; }
+    
+    /* 返回按钮样式 */
+    .back-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 123, 255, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .back-button:hover {
+        background-color: rgba(0, 86, 179, 0.9);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .back-button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .text-lg { font-size: 18px; }
+    .text-sm { font-size: 14px; }
+    .font-bold { font-weight: 700; }
+    .font-medium { font-weight: 500; }
+    .mb-6 { margin-bottom: 24px; }
+    .mb-8 { margin-bottom: 32px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mt-6 { margin-top: 24px; }
+    .mt-4 { margin-top: 16px; }
+    .mt-2 { margin-top: 8px; }
+    .ml-3 { margin-left: 12px; }
+    .text-gray-600 { color: #4b5563; }
+    .text-gray-500 { color: #6b7280; }
+    .text-primary { color: #1a73e8; }
+    
+    /* 表单样式 */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 500; }
+    .form-control { width: 100%; padding: 12px 16px; border: 1px solid #dadce0; border-radius: 8px; font-size: 16px; transition: border-color 0.3s; }
+    .form-control:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2); }
+    
+    /* 关卡卡片样式 */
+    .level-card { cursor: pointer; transition: all 0.3s; }
+    .level-card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
+    .level-card.opacity-50 { opacity: 0.5; cursor: not-allowed; }
+    
+    /* 其他样式 */
+    .maker { font-size: 16px; color: #6b7280; margin-top: 8px; font-style: italic; }
+    
+    /* 奖励弹窗 */
+    .reward-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 999; }
+    .reward-content { background: white; padding: 40px 60px; border-radius: 16px; text-align: center; animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .reward-text { font-size: 48px; font-weight: bold; margin-bottom: 20px; line-height: 1.2; }
+    .reward-desc { font-size: 18px; color: #4b5563; margin-bottom: 30px; }
+    .reward-emoji { font-size: 64px; margin-bottom: 16px; }
+    
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      80% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* 匹配题样式 */
+    .match-container { display: flex; flex-direction: column; gap: 16px; }
+    .match-row { display: flex; gap: 24px; }
+    .match-column { flex: 1; }
+    .match-label { font-size: 18px; font-weight: 500; margin-bottom: 12px; color: #1a73e8; }
+    .match-item { padding: 12px; border: 1px solid #dadce0; border-radius: 6px; margin-bottom: 8px; cursor: move; background: white; }
+    .match-item.dragging { opacity: 0.7; background: #f1f3f4; }
+    .match-target { min-height: 46px; border: 1px dashed #dadce0; border-radius: 6px; margin-bottom: 8px; padding: 12px; }
+    .match-target.filled { border-style: solid; border-color: #1a73e8; background: #e8f0fe; }
+    
+    /* 题目标签 */
+    .question-tag { display: inline-block; padding: 4px 8px; background: #1a73e8; color: white; border-radius: 4px; font-size: 14px; margin-right: 8px; }
+    
+    /* 姓名选择页 */
+    .name-select-page { text-align: center; padding: 40px 20px; }
+    .upload-area { border: 2px dashed #dadce0; border-radius: 12px; padding: 30px; margin-bottom: 30px; transition: border-color 0.3s; }
+    .upload-area:hover { border-color: #1a73e8; }
+    .upload-icon { font-size: 48px; color: #6b7280; margin-bottom: 16px; }
+    .upload-loading { color: #1a73e8; font-size: 16px; margin-top: 10px; }
+    
+    /* 网格布局 */
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .md\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+    @media (max-width: 768px) {
+      .grid-cols-2 { grid-template-columns: 1fr; }
+      .match-row { flex-direction: column; gap: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 1. 姓名选择页面 -->
+    <div id="name-select-page" class="name-select-page card">
+      <h1 class="text-2xl font-bold mb-2">《只有一个地球》练习题</h1>
+      <p class="maker">【制作者：梁文彬】</p>
+      <p class="text-gray-600 mt-6 mb-8">请先上传姓名名单并选择你的姓名</p>
+
+      <!-- Excel上传区域 -->
+      <div class="upload-area mb-6">
+        <div class="upload-icon">📊</div>
+        <p class="mb-4">点击上传姓名名单（mingdan.xlsx）</p>
+        <!-- 每次点击重新创建file input，避免缓存旧文件 -->
+        <div id="file-input-container">
+          <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden">
+        </div>
+        <button id="upload-btn" class="btn btn-primary">选择Excel文件</button>
+        <p id="upload-loading" class="upload-loading hidden">解析中...请稍候</p>
+        <p id="upload-tip" class="text-sm text-gray-500 mt-4 hidden">已上传：<span id="file-name"></span></p>
+        <button id="reupload-btn" class="btn btn-secondary mt-4 hidden">重新选择文件</button>
+      </div>
+
+      <!-- 姓名选择下拉框 -->
+      <div class="form-group hidden" id="name-select-group">
+        <label class="form-label">选择你的姓名</label>
+        <select id="student-name" class="form-control">
+          <option value="">-- 请选择姓名 --</option>
+        </select>
+      </div>
+
+      <!-- 开始游戏按钮 -->
+      <button id="enter-game" class="btn btn-primary mt-6 hidden">进入游戏</button>
+    </div>
+
+    <!-- 2. 初始页面 -->
+    <div id="intro" class="card text-center py-10 hidden">
+      <h1 class="text-2xl font-bold mb-2">《只有一个地球》练习题</h1>
+      <p class="maker">【制作者：梁文彬】</p>
+      <p class="text-gray-600 mt-2">当前答题学生：<span id="current-student" class="text-primary font-bold"></span></p>
+      <p class="mb-8 text-gray-600 mt-6">共22题，分4个关卡，覆盖课文字词、理解、主旨、拓展全考点！</p>
+      <button id="start" class="btn btn-primary text-lg px-8">开始练习</button>
+      <button id="download-html" class="btn btn-secondary text-lg px-8 mt-4">下载HTML文件（保存到E:\youxi）</button>
+    </div>
+
+    <!-- 3. 关卡导航 -->
+    <div id="levels" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+      <div class="level-card card text-center" data-level="0">
+        <div class="font-bold text-lg">字词积累</div>
+        <div class="text-sm text-gray-500 mt-2">6题</div>
+      </div>
+      <div class="level-card card text-center opacity-50" data-level="1">
+        <div class="font-bold text-lg">内容理解</div>
+        <div class="text-sm text-gray-500 mt-2">5题</div>
+      </div>
+      <div class="level-card card text-center opacity-50" data-level="2">
+        <div class="font-bold text-lg">主旨思辨</div>
+        <div class="text-sm text-gray-500 mt-2">5题</div>
+      </div>
+      <div class="level-card card text-center opacity-50" data-level="3">
+        <div class="font-bold text-lg">拓展应用</div>
+        <div class="text-sm text-gray-500 mt-2">6题</div>
+      </div>
+    </div>
+
+    <!-- 4. 练习区域 -->
+    <div id="exercise" class="hidden">
+      <div class="card">
+        <div class="flex justify-between items-center mb-6">
+          <h2 id="level-title" class="font-bold text-xl"></h2>
+          <div class="flex items-center gap-4">
+            <span id="question-count" class="text-gray-500">1/6</span>
+            <span class="text-gray-500">当前学生：<span id="exercise-student" class="text-primary font-medium"></span></span>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div id="level-progress" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div id="question" class="mt-8 text-lg font-medium"></div>
+        <div id="options" class="space-y-4 mt-6"></div>
+        <div id="feedback" class="feedback hidden mt-6"></div>
+      </div>
+      <div class="flex flex-wrap justify-between items-center mt-6 gap-4">
+        <button id="prev" class="btn btn-primary hidden">上一题</button>
+        <div class="flex gap-3">
+          <button id="submit" class="btn btn-primary">提交答案</button>
+          <button id="next" class="btn btn-primary hidden">下一题</button>
+          <button id="complete" class="btn btn-primary hidden">完成关卡</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. 完成页面 -->
+    <div id="result" class="hidden card text-center py-8">
+      <h2 class="text-2xl font-bold mb-4">练习完成！</h2>
+      <p class="text-lg mb-2">当前学生：<span id="result-student" class="text-primary font-bold"></span></p>
+      <p class="text-lg mb-2">总得分: <span id="final-score" class="text-primary font-bold">0</span>/22</p>
+      <p class="text-gray-500 mb-6">剩余生命值: <span id="final-health" class="font-bold">10</span></p>
+      <button id="export-score" class="btn btn-primary text-lg px-8 mb-4">导出得分记录（保存到E:\youxi）</button>
+      <button id="restart" class="btn btn-primary text-lg px-8">重新开始</button>
+    </div>
+
+    <!-- 6. 奖励弹窗 -->
+    <div id="reward-modal" class="reward-modal hidden">
+      <div class="reward-content">
+        <div class="reward-emoji" id="reward-emoji">🌸</div>
+        <div class="reward-text" id="reward-text">送你花花！</div>
+        <div class="reward-desc" id="reward-desc">生命值满分！环保小卫士实至名归～</div>
+        <button id="close-reward" class="btn btn-primary">继续</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局状态管理
+    const state = {
+      level: 0,
+      question: 0,
+      score: 0,
+      health: 10,
+      completed: [false, false, false, false],
+      studentName: "", // 当前答题学生姓名
+      nameList: [], // 从Excel读取的姓名列表
+      scoreRecords: [], // 得分记录：[{questionNo, questionContent, isCorrect, score, time}]
+      isParsing: false, // 标记是否正在解析，防止重复点击
+      userAnswers: {} // 存储用户答案：{level: {question: answer}}
+    };
+
+    // DOM元素缓存
+    const el = {
+      // 姓名选择页面
+      nameSelectPage: document.getElementById('name-select-page'),
+      fileInputContainer: document.getElementById('file-input-container'),
+      excelUpload: document.getElementById('excel-upload'),
+      uploadBtn: document.getElementById('upload-btn'),
+      uploadLoading: document.getElementById('upload-loading'),
+      uploadTip: document.getElementById('upload-tip'),
+      fileName: document.getElementById('file-name'),
+      reuploadBtn: document.getElementById('reupload-btn'),
+      nameSelectGroup: document.getElementById('name-select-group'),
+      studentName: document.getElementById('student-name'),
+      enterGame: document.getElementById('enter-game'),
+      // 其他页面元素
+      intro: document.getElementById('intro'),
+      currentStudent: document.getElementById('current-student'),
+      start: document.getElementById('start'),
+      downloadHtml: document.getElementById('download-html'),
+      levels: document.getElementById('levels'),
+      exercise: document.getElementById('exercise'),
+      levelTitle: document.getElementById('level-title'),
+      question: document.getElementById('question'),
+      options: document.getElementById('options'),
+      feedback: document.getElementById('feedback'),
+      questionCount: document.getElementById('question-count'),
+      prev: document.getElementById('prev'),
+      submit: document.getElementById('submit'),
+      next: document.getElementById('next'),
+      complete: document.getElementById('complete'),
+      exerciseStudent: document.getElementById('exercise-student'),
+      result: document.getElementById('result'),
+      finalScore: document.getElementById('final-score'),
+      finalHealth: document.getElementById('final-health'),
+      resultStudent: document.getElementById('result-student'),
+      exportScore: document.getElementById('export-score'),
+      restart: document.getElementById('restart'),
+      levelProgress: document.getElementById('level-progress'),
+      rewardModal: document.getElementById('reward-modal'),
+      rewardEmoji: document.getElementById('reward-emoji'),
+      rewardText: document.getElementById('reward-text'),
+      rewardDesc: document.getElementById('reward-desc'),
+      closeReward: document.getElementById('close-reward')
+    };
+
+    // 练习题数据
+    const data = {
+      levels: [
+        {
+          title: "字词积累",
+          questions: [
+            {type: "choice", q: "<span class='question-tag'>1</span>下列词语中加点字的读音完全相同的是哪一项？", o: ["薄弱（bó） 薄脆（báo）", "提供（gōng） 供品（gòng）", "系列（xì） 系鞋带（jì）", "灾难（nàn） 责难（nàn）"], a: 3, explanation: "A项“薄弱”读bó，“薄脆”读báo；B项“提供”读gōng，“供品”读gòng；C项“系列”读xì，“系鞋带”读jì；D项“灾难”“责难”均读nàn，读音完全相同。"},
+            {type: "choice", q: "<span class='question-tag'>2</span>根据拼音填写词语，全部正确的一项是（ ）：<br>jīng yíng 美丽的地球是生命的 yáo lán...", o: ["晶莹 摇蓝 和蔼...", "晶营 摇篮 和蔼...", "晶莹 摇篮 和蔼...", "晶莹 摇篮 合蔼..."], a: 2, explanation: "正确字形为“晶莹、摇篮、和蔼、慷慨、资源、滥、节制、生态”；A项“摇蓝”错误，B项“晶营”“慷概”“烂”错误，D项“合蔼”“资原”“节治”错误。"},
+            {type: "choice", q: "<span class='question-tag'>3</span>与“慷慨”意思最相近的词语是（ ）", o: ["吝啬", "大方", "节约", "小气"], a: 1, explanation: "“慷慨”指待人宽厚、不吝啬，文中指地球无私提供资源，与“大方”意思相近；“吝啬”“小气”是反义词，“节约”指节省，与“慷慨”无关。"},
+            {type: "choice", q: "<span class='question-tag'>4</span>“人们不顾后果地滥用化学品”中“顾”的意思是（ ）", o: ["拜访", "照顾", "考虑、顾及", "看"], a: 2, explanation: "“不顾后果”指不考虑行为带来的结果，“顾”此处意为“考虑、顾及”；其他选项“拜访”“照顾”“看”均不符合语境。"},
+            {type: "choice", q: "<span class='question-tag'>5</span>下列词语中，与“生态灾难”感情色彩相同的是（ ）", o: ["晶莹剔透", "慷慨给予", "乱砍滥伐", "和蔼可亲"], a: 2, explanation: "“生态灾难”是贬义词，指破坏环境带来的灾害；“乱砍滥伐”也是贬义词，指无节制砍伐树木；其他选项均为褒义词。"},
+            {type: "choice", q: "<span class='question-tag'>6</span>下列词语中，字形全部正确的是（ ）", o: ["摇蓝 枯竭 璀璨", "滥用 节制 晶莹", "和霭 资源 慷慨", "生太 摇篮 和蔼"], a: 1, explanation: "A项“摇蓝”应为“摇篮”，C项“和霭”应为“和蔼”，D项“生太”应为“生态”；B项字形全部正确。"}
+          ]
+        },
+        {
+          title: "内容理解",
+          questions: [
+            {type: "choice", q: "<span class='question-tag'>7</span>“地球是一个半径约为6400千米的星球”运用的说明方法是（ ）", o: ["举例子", "列数字", "作比较", "打比方"], a: 1, explanation: "句子通过具体数字“6400千米”准确说明地球的大小，运用“列数字”的说明方法，让表述更科学、有说服力。"},
+            {type: "choice", q: "<span class='question-tag'>8</span>下列关于地球自然资源的说法，不符合课文内容的是（ ）", o: ["矿产资源是经过几百万年甚至几亿年的地质变化形成的", "水资源、土地资源、生物资源本来可以不断再生...", "人们随意毁坏自然资源、滥用化学品，会导致资源无法再生", "地球的自然资源十分丰富，即使无节制开采也不会枯竭"], a: 3, explanation: "课文明确指出“地球所拥有的自然资源也是有限的”，无节制开采会加速资源枯竭；其他选项均与课文内容一致。"},
+            {type: "choice", q: "<span class='question-tag'>9</span>“地球，这位人类的母亲，这个生命的摇篮”这句话的表达效果是（ ）", o: ["说明地球的形状像母亲和摇篮", "运用比喻，生动突出地球孕育生命的重要作用", "介绍地球的位置在宇宙中的“母亲”地位", "表达对母亲的思念和对摇篮的回忆"], a: 1, explanation: "这句话将地球比作“人类的母亲”“生命的摇篮”，运用比喻的说明方法，形象地强调地球是人类和所有生命的孕育者，突出其重要性。"},
+            {type: "choice", q: "<span class='question-tag'>10</span>“科学家已经证明，至少在以地球为中心的40万亿千米的范围内...”中“至少”的作用是（ ）", o: ["体现语言的随意性...", "体现语言的严谨性...", "体现语言的夸张性...", "体现语言的简洁性..."], a: 1, explanation: "“至少”表示“最小限度”，说明目前科学家仅能证明“40万亿千米范围内”无宜居星球，不排除更远范围的可能性，体现说明文语言的准确性和严谨性。"},
+            {type: "choice", q: "<span class='question-tag'>11</span>下列自然资源中，不属于“本来可以不断再生”的是（ ）", o: ["森林资源", "煤炭资源", "水资源", "生物资源"], a: 1, explanation: "煤炭资源是经过漫长地质年代形成的不可再生资源，消耗后无法短期内再生；森林、水、生物资源在合理利用下可不断再生，属于可再生资源。"}
+          ]
+        },
+        {
+          title: "主旨思辨",
+          questions: [
+            {type: "choice", q: "<span class='question-tag'>12</span>作者得出“我们要精心地保护地球...”这一结论的依据不包括（ ）", o: ["地球美丽壮观但在宇宙中十分渺小", "地球资源有限且易被人类破坏", "人类目前无法移居到其他星球", "地球是太阳系中体积最大的行星"], a: 3, explanation: "课文中作者的论证依据包括“地球渺小、资源有限、无法移居”，而“地球是太阳系最大行星”与事实不符（太阳系最大行星是木星），也不是作者的论证依据。"},
+            {type: "choice", q: "<span class='question-tag'>13</span>“我们这个地球太可爱了，同时又太容易破碎了”中“可爱”和“容易破碎”分别指（ ）", o: ["地球外表美丽 / 地球质地脆弱...", "地球孕育生命、景色优美 / 地球生态环境易被人类破坏", "地球在宇宙中很显眼 / 地球容易被小行星撞击", "地球气候适宜 / 地球大气层容易消失"], a: 1, explanation: "“可爱”指地球孕育生命、拥有美丽风光，“容易破碎”指地球的生态环境易因人类活动遭到破坏，体现作者对地球的热爱与担忧。"},
+            {type: "choice", q: "<span class='question-tag'>14</span>作者推导“保护地球”结论的逻辑顺序是（ ）", o: ["地球资源有限→地球渺小→无法移居→保护地球", "地球渺小→地球资源有限→无法移居→保护地球", "无法移居→地球渺小→地球资源有限→保护地球", "地球资源有限→无法移居→地球渺小→保护地球"], a: 1, explanation: "课文先写地球在宇宙中“渺小”，再说明地球“资源有限”，接着论证人类“无法移居其他星球”，最后得出“保护地球”的结论。"},
+            {type: "choice", q: "<span class='question-tag'>15</span>作者写“地球所拥有的自然资源也是有限的”时，主要想表达的情感是（ ）", o: ["对自然资源丰富的自豪", "对资源有限的担忧", "对人类智慧的信心", "对宇宙广阔的赞叹"], a: 1, explanation: "作者强调“资源有限”，是为了提醒人类珍惜资源、避免破坏，核心情感是“对资源有限的担忧”；其他选项与段落主旨不符。"},
+            {type: "matching", q: "<span class='question-tag'>16</span>将说明方法与对应的例子及作用配对", left: ["举例子", "列数字", "打比方", "作比较"], right: ["地球是一个半径约为6400千米的星球→准确说明地球大小", "拿矿产资源来说...→具体说明资源形成不易", "地球像生命的摇篮→生动突出地球孕育生命的作用", "地球在宇宙中...→突出地球的渺小"], a: [1, 0, 2, 3], explanation: "举例子需结合具体事例，列数字需含具体数据，打比方需用比喻，作比较需突出对比。"}
+          ]
+        },
+        {
+          title: "拓展应用",
+          questions: [
+            {type: "choice", q: "<span class='question-tag'>17</span>下列做法中，不符合“保护地球”理念的是（ ）", o: ["将垃圾分类投放...", "外出购物自带布袋...", "为方便，大量使用一次性筷子和餐盒", "随手关闭水龙头和电灯..."], a: 2, explanation: "大量使用一次性筷子（消耗森林资源）和餐盒（造成白色污染）会破坏环境，不符合保护地球理念；其他选项均为环保行为。"},
+            {type: "choice", q: "<span class='question-tag'>18</span>下列宣传语中，最能体现课文主旨的是（ ）", o: ["探索宇宙...", "珍惜自然资源...", "发展工业...", "享受生活..."], a: 1, explanation: "课文主旨是“保护地球、珍惜资源”，“珍惜自然资源，共营生命绿色”直接呼应这一主题；A项与“无法移居”矛盾，C、D项违背环保理念。"},
+            {type: "choice", q: "<span class='question-tag'>19</span>下列属于“低碳生活”的做法是（ ）", o: ["经常开车出行...", "长时间开空调...", "优先选择公交、自行车等绿色出行方式", "频繁使用打印机..."], a: 2, explanation: "低碳生活指减少二氧化碳排放的生活方式，绿色出行能减少汽车尾气排放，属于低碳行为；其他选项均会增加能源消耗。"},
+            {type: "choice", q: "<span class='question-tag'>20</span>下列属于人类破坏地球导致的生态灾难的是（ ）", o: ["地震", "海啸", "水土流失", "火山喷发"], a: 2, explanation: "水土流失多因人类乱砍滥伐、破坏植被导致，属于人为生态灾难；地震、海啸、火山喷发是自然现象。"},
+            {type: "choice", q: "<span class='question-tag'>21</span>为“保护地球”写倡议书，下列内容不适合列入的是（ ）", o: ["拒绝食用野生动物...", "积极参与植树造林...", "大量购买新衣服...", "宣传环保知识..."], a: 2, explanation: "大量购买新衣服会增加资源消耗和工业污染，不符合保护地球理念；其他选项均为积极的环保行动。"},
+            {type: "choice", q: "<span class='question-tag'>22</span>仿照课文“打比方”的说明方法，下列句子中写法正确的是（ ）", o: ["森林像地球的“肺”，为我们净化空气", "森林面积约占地球陆地面积的31%", "森林比草原的空气更清新", "森林里生活着各种各样的动物"], a: 0, explanation: "A项将森林比作“地球的肺”，运用了打比方的说明方法，与课文写法一致；B项是列数字，C项是作比较，D项是陈述句。"}
+          ]
+        }
+      ]
+    };
+
+    // 初始化事件监听
+    function initEventListeners() {
+      // 上传按钮点击事件
+      el.uploadBtn.addEventListener('click', () => {
+        // 创建新的file input避免缓存问题
+        const newInput = document.createElement('input');
+        newInput.type = 'file';
+        newInput.id = 'excel-upload';
+        newInput.accept = '.xlsx, .xls';
+        newInput.className = 'hidden';
+        el.fileInputContainer.innerHTML = '';
+        el.fileInputContainer.appendChild(newInput);
+        
+        newInput.addEventListener('change', handleFileUpload);
+        newInput.click();
+      });
+
+      // 重新上传按钮点击事件
+      el.reuploadBtn.addEventListener('click', () => {
+        el.uploadBtn.click();
+      });
+
+      // 学生姓名选择变化事件
+      el.studentName.addEventListener('change', () => {
+        const selectedName = el.studentName.value;
+        if (selectedName) {
+          state.studentName = selectedName;
+          el.enterGame.classList.remove('hidden');
+        } else {
+          el.enterGame.classList.add('hidden');
+        }
+      });
+
+      // 进入游戏按钮点击事件
+      el.enterGame.addEventListener('click', () => {
+        el.nameSelectPage.classList.add('hidden');
+        el.intro.classList.remove('hidden');
+        el.currentStudent.textContent = state.studentName;
+      });
+
+      // 开始练习按钮点击事件
+      el.start.addEventListener('click', () => {
+        el.intro.classList.add('hidden');
+        el.levels.classList.remove('hidden');
+        loadLevel(0);
+      });
+
+      // 关卡卡片点击事件
+      document.querySelectorAll('.level-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const level = parseInt(card.dataset.level);
+          if (!card.classList.contains('opacity-50')) {
+            loadLevel(level);
+          }
+        });
+      });
+
+      // 上一题按钮点击事件
+      el.prev.addEventListener('click', () => {
+        if (state.question > 0) {
+          state.question--;
+          renderQuestion();
+        }
+      });
+
+      // 下一题按钮点击事件
+      el.next.addEventListener('click', () => {
+        if (state.question < data.levels[state.level].questions.length - 1) {
+          state.question++;
+          renderQuestion();
+        }
+      });
+
+      // 提交按钮点击事件
+      el.submit.addEventListener('click', handleSubmit);
+
+      // 完成关卡按钮点击事件
+      el.complete.addEventListener('click', completeLevel);
+
+      // 重新开始按钮点击事件
+      el.restart.addEventListener('click', restart);
+
+      // 关闭奖励弹窗按钮点击事件
+      el.closeReward.addEventListener('click', () => {
+        el.rewardModal.classList.add('hidden');
+      });
+
+      // 下载HTML按钮点击事件
+      el.downloadHtml.addEventListener('click', downloadHtmlFile);
+
+      // 导出分数按钮点击事件
+      el.exportScore.addEventListener('click', exportScoreRecord);
+    }
+
+    // 处理Excel文件上传
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // 显示加载状态
+      el.uploadLoading.classList.remove('hidden');
+      el.uploadBtn.classList.add('hidden');
+      el.reuploadBtn.classList.add('hidden');
+      el.uploadTip.classList.add('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          // 提取姓名列表（假设Excel中姓名列标题为"姓名"）
+          state.nameList = jsonData.map(item => {
+            // 尝试多种可能的列名（考虑可能的空格或特殊字符）
+            const nameKey = Object.keys(item).find(key => 
+              key.trim() === '姓名' || key.trim() === '名字'
+            );
+            return nameKey ? item[nameKey] : null;
+          }).filter(name => name !== null && name !== '');
+
+          // 更新UI
+          el.fileName.textContent = file.name;
+          el.uploadLoading.classList.add('hidden');
+          el.uploadTip.classList.remove('hidden');
+          el.reuploadBtn.classList.remove('hidden');
+          el.nameSelectGroup.classList.remove('hidden');
+
+          // 填充下拉框
+          el.studentName.innerHTML = '<option value="">-- 请选择姓名 --</option>';
+          state.nameList.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            el.studentName.appendChild(option);
+          });
+        } catch (error) {
+          console.error('解析Excel失败:', error);
+          alert('解析文件失败，请确保上传的是正确的姓名名单Excel文件');
+          el.uploadLoading.classList.add('hidden');
+          el.uploadBtn.classList.remove('hidden');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // 加载关卡
+    function loadLevel(level) {
+      state.level = level;
+      state.question = 0;
+      el.levels.classList.add('hidden');
+      el.exercise.classList.remove('hidden');
+      el.levelTitle.textContent = data.levels[level].title;
+      el.exerciseStudent.textContent = state.studentName;
+      renderQuestion();
+    }
+
+    // 渲染题目
+    function renderQuestion() {
+      const levelData = data.levels[state.level];
+      const questionData = levelData.questions[state.question];
+      
+      // 更新问题计数
+      el.questionCount.textContent = `${state.question + 1}/${levelData.questions.length}`;
+      
+      // 更新进度条
+      const progress = ((state.question + 1) / levelData.questions.length) * 100;
+      el.levelProgress.style.width = `${progress}%`;
+      
+      // 渲染问题内容
+      el.question.innerHTML = questionData.q;
+      
+      // 清空选项容器
+      el.options.innerHTML = '';
+      
+      // 隐藏反馈和按钮
+      el.feedback.classList.add('hidden');
+      el.submit.classList.remove('hidden');
+      el.next.classList.add('hidden');
+      el.complete.classList.add('hidden');
+      
+      // 显示上一题按钮（如果不是第一题）
+      if (state.question > 0) {
+        el.prev.classList.remove('hidden');
+      } else {
+        el.prev.classList.add('hidden');
+      }
+      
+      // 渲染选项（选择题）
+      if (questionData.type === 'choice') {
+        questionData.o.forEach((option, index) => {
+          const optionEl = document.createElement('div');
+          optionEl.className = `option ${state.userAnswers[state.level]?.[state.question] === index ? 'selected' : ''}`;
+          optionEl.dataset.index = index;
+          optionEl.innerHTML = option;
+          optionEl.addEventListener('click', () => {
+            // 清除其他选项的选中状态
+            document.querySelectorAll('.option').forEach(el => {
+              el.classList.remove('selected');
+            });
+            // 设置当前选项为选中
+            optionEl.classList.add('selected');
+          });
+          el.options.appendChild(optionEl);
+        });
+      }
+      // 渲染匹配题
+      else if (questionData.type === 'matching') {
+        const matchContainer = document.createElement('div');
+        matchContainer.className = 'match-container';
+        
+        const matchRow = document.createElement('div');
+        matchRow.className = 'match-row';
+        
+        // 左侧选项列
+        const leftCol = document.createElement('div');
+        leftCol.className = 'match-column';
+        
+        const leftLabel = document.createElement('div');
+        leftLabel.className = 'match-label';
+        leftLabel.textContent = '左侧项';
+        leftCol.appendChild(leftLabel);
+        
+        questionData.left.forEach((item, index) => {
+          const matchItem = document.createElement('div');
+          matchItem.className = 'match-item';
+          matchItem.draggable = true;
+          matchItem.dataset.index = index;
+          matchItem.textContent = item;
+          
+          // 拖拽事件
+          matchItem.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', index);
+            setTimeout(() => matchItem.classList.add('dragging'), 0);
+          });
+          
+          matchItem.addEventListener('dragend', () => {
+            matchItem.classList.remove('dragging');
+          });
+          
+          leftCol.appendChild(matchItem);
+        });
+        
+        // 右侧目标列
+        const rightCol = document.createElement('div');
+        rightCol.className = 'match-column';
+        
+        const rightLabel = document.createElement('div');
+        rightLabel.className = 'match-label';
+        rightLabel.textContent = '右侧项';
+        rightCol.appendChild(rightLabel);
+        
+        questionData.right.forEach((item, index) => {
+          const target = document.createElement('div');
+          target.className = `match-target ${state.userAnswers[state.level]?.[state.question]?.includes(index) ? 'filled' : ''}`;
+          target.dataset.target = index;
+          target.textContent = item;
+          
+          // 拖放事件
+          target.addEventListener('dragover', (e) => {
+            e.preventDefault();
+          });
+          
+          target.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const sourceIndex = e.dataTransfer.getData('text/plain');
+            // 存储答案
+            if (!state.userAnswers[state.level]) state.userAnswers[state.level] = {};
+            if (!state.userAnswers[state.level][state.question]) {
+              state.userAnswers[state.level][state.question] = [];
+            }
+            state.userAnswers[state.level][state.question][sourceIndex] = index;
+            target.classList.add('filled');
+          });
+          
+          rightCol.appendChild(target);
+        });
+        
+        matchRow.appendChild(leftCol);
+        matchRow.appendChild(rightCol);
+        matchContainer.appendChild(matchRow);
+        el.options.appendChild(matchContainer);
+      }
+    }
+
+    // 处理答案提交
+    function handleSubmit() {
+      const levelData = data.levels[state.level];
+      const questionData = levelData.questions[state.question];
+      let userAnswer;
+      let isCorrect = false;
+      
+      // 获取用户答案（选择题）
+      if (questionData.type === 'choice') {
+        const selectedOption = document.querySelector('.option.selected');
+        if (!selectedOption) {
+          alert('请选择一个答案');
+          return;
+        }
+        userAnswer = parseInt(selectedOption.dataset.index);
+        isCorrect = userAnswer === questionData.a;
+      }
+      // 匹配题
+      else if (questionData.type === 'matching') {
+        userAnswer = state.userAnswers[state.level]?.[state.question] || [];
+        isCorrect = JSON.stringify(userAnswer) === JSON.stringify(questionData.a);
+      }
+      
+      // 更新分数和生命值
+      if (isCorrect) {
+        state.score++;
+        el.feedback.className = 'feedback correct';
+        el.feedback.innerHTML = `正确！<br>${questionData.explanation}`;
+      } else {
+        if (state.health > 0) {
+          state.health--;
+        }
+        el.feedback.className = 'feedback wrong';
+        el.feedback.innerHTML = `不正确<br>正确答案：${getCorrectAnswerText(questionData)}<br>${questionData.explanation}`;
+      }
+      
+      // 记录得分
+      state.scoreRecords.push({
+        questionNo: parseInt(questionData.q.match(/<span class='question-tag'>(\d+)<\/span>/)[1]),
+        questionContent: questionData.q.replace(/<[^>]+>/g, ''),
+        isCorrect,
+        score: isCorrect ? 1 : 0,
+        time: new Date().toLocaleString()
+      });
+      
+      // 显示反馈
+      el.feedback.classList.remove('hidden');
+      el.submit.classList.add('hidden');
+      
+      // 显示下一题或完成按钮
+      if (state.question < levelData.questions.length - 1) {
+        el.next.classList.remove('hidden');
+      } else {
+        el.complete.classList.remove('hidden');
+      }
+    }
+
+    // 获取正确答案文本
+    function getCorrectAnswerText(questionData) {
+      if (questionData.type === 'choice') {
+        return questionData.o[questionData.a];
+      } else if (questionData.type === 'matching') {
+        let result = [];
+        questionData.a.forEach((targetIndex, sourceIndex) => {
+          result.push(`${questionData.left[sourceIndex]} → ${questionData.right[targetIndex]}`);
+        });
+        return result.join('<br>');
+      }
+      return '';
+    }
+
+    // 完成关卡
+    function completeLevel() {
+      state.completed[state.level] = true;
+      
+      // 解锁下一关
+      if (state.level < data.levels.length - 1) {
+        const nextLevelCard = document.querySelector(`.level-card[data-level="${state.level + 1}"]`);
+        if (nextLevelCard) {
+          nextLevelCard.classList.remove('opacity-50');
+        }
+      }
+      
+      // 检查是否所有关卡都已完成
+      const allCompleted = state.completed.every(completed => completed);
+      
+      if (allCompleted) {
+        // 显示完成页面
+        el.exercise.classList.add('hidden');
+        el.result.classList.remove('hidden');
+        el.resultStudent.textContent = state.studentName;
+        el.finalScore.textContent = state.score;
+        el.finalHealth.textContent = state.health;
+        
+        // 显示返回按钮
+        document.getElementById('back-btn').style.display = 'block';
+        
+        // 如果生命值满分，显示奖励弹窗
+        if (state.health === 10) {
+          el.rewardModal.classList.remove('hidden');
+        }
+      } else {
+        // 返回关卡选择页面
+        el.exercise.classList.add('hidden');
+        el.levels.classList.remove('hidden');
+      }
+    }
+    
+    // 重新开始
+    function restart() {
+      // 重置状态
+      state.level = 0;
+      state.question = 0;
+      state.score = 0;
+      state.health = 10;
+      state.completed = [false, false, false, false];
+      state.userAnswers = {};
+      state.scoreRecords = [];
+      
+      // 重置UI
+      el.result.classList.add('hidden');
+      document.querySelectorAll('.level-card').forEach((card, index) => {
+        if (index === 0) {
+          card.classList.remove('opacity-50');
+        } else {
+          card.classList.add('opacity-50');
+        }
+      });
+      loadLevel(0);
+      
+      // 隐藏返回按钮
+      document.getElementById('back-btn').style.display = 'none';
+    }
+
+    // 重新开始
+    function restart() {
+      // 重置状态
+      state.level = 0;
+      state.question = 0;
+      state.score = 0;
+      state.health = 10;
+      state.completed = [false, false, false, false];
+      state.userAnswers = {};
+      state.scoreRecords = [];
+      
+      // 重置UI
+      el.result.classList.add('hidden');
+      document.querySelectorAll('.level-card').forEach((card, index) => {
+        if (index === 0) {
+          card.classList.remove('opacity-50');
+        } else {
+          card.classList.add('opacity-50');
+        }
+      });
+      loadLevel(0);
+    }
+
+    // 下载HTML文件
+    function downloadHtmlFile() {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '只有一个地球练习题.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert('文件已下载，请保存到E:\\youxi目录');
+    }
+
+    // 导出分数记录
+    function exportScoreRecord() {
+      // 准备CSV内容
+      let csvContent = '题目编号,题目内容,是否正确,得分,答题时间\n';
+      
+      state.scoreRecords.forEach(record => {
+        csvContent += `${record.questionNo},`;
+        csvContent += `"${record.questionContent.replace(/"/g, '""')}",`;
+        csvContent += `${record.isCorrect ? '正确' : '错误'},`;
+        csvContent += `${record.score},`;
+        csvContent += `${record.time}\n`;
+      });
+      
+      // 总得分行
+      csvContent += `,总得分,${state.score}/22,,,`;
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.studentName}_只有一个地球练习题得分记录.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert('得分记录已导出，请保存到E:\\youxi目录');
+    }
+
+    // 初始化应用
+    function init() {
+      initEventListeners();
+    }
+
+    // 启动应用
+    init();
+  </script>
+<!-- 返回按钮 -->
+  <button id="back-btn" class="back-button">返回主界面</button>
+  <script>
+    // 返回按钮点击事件
+    document.getElementById('back-btn').addEventListener('click', function() {
+        window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

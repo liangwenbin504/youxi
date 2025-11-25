@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南苑森林湿地交通规划 - 作业练习游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        /* 作业纸主体样式 */
+        .homework-paper {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            position: relative;
+        }
+        .paper-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .paper-title {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .paper-subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+        /* 计分板 */
+        .score-board {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background-color: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 6px;
+            padding: 10px 15px;
+            text-align: center;
+        }
+        .score-title {
+            font-size: 14px;
+            color: #2980b9;
+            margin-bottom: 5px;
+        }
+        .score-num {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        /* 返回按钮样式 */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .back-button:active {
+            transform: translateY(0);
+        }
+        /* 题型通用样式 */
+        .question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .question-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .question-title span {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
+            background-color: #3498db;
+            color: #fff;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .question-score {
+            font-size: 14px;
+            color: #e74c3c;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+        /* 选择题样式 */
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            padding: 10px 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .option:hover {
+            border-color: #3498db;
+            background-color: #f0f8ff;
+        }
+        .option.selected {
+            background-color: #e8f4fd;
+            border-color: #3498db;
+            color: #2980b9;
+        }
+        .option input {
+            margin-right: 10px;
+        }
+        /* 拖拽题样式 */
+        .drag-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .station-source {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+        }
+        .station-item {
+            padding: 8px 12px;
+            background-color: #3498db;
+            color: #fff;
+            border-radius: 4px;
+            cursor: grab;
+            user-select: none;
+        }
+        .station-item.dragging {
+            opacity: 0.7;
+            cursor: grabbing;
+        }
+        .route-target {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            min-height: 60px;
+        }
+        .route-target .station-item {
+            background-color: #2ecc71;
+        }
+        .hint-text {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+            width: 100%;
+        }
+        /* 判断题样式 */
+        .judge-options {
+            display: flex;
+            gap: 20px;
+        }
+        .judge-option {
+            padding: 10px 30px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .judge-option:hover {
+            border-color: #3498db;
+        }
+        .judge-option.selected {
+            background-color: #e8f4fd;
+            border-color: #3498db;
+            color: #2980b9;
+        }
+        /* 提交与反馈 */
+        .submit-btn {
+            display: block;
+            width: 200px;
+            height: 45px;
+            line-height: 45px;
+            text-align: center;
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 auto 30px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #27ae60;
+        }
+        .feedback-area {
+            padding: 20px;
+            background-color: #dff0d8;
+            border-radius: 8px;
+            color: #3c763d;
+            display: none;
+        }
+        .feedback-title {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .feedback-item {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .correct {
+            color: #27ae60;
+        }
+        .wrong {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="homework-paper">
+        <!-- 计分板 -->
+        <div class="score-board">
+            <div class="score-title">本次得分</div>
+            <div class="score-num" id="score">0</div>
+            <div class="score-title">总分：100</div>
+        </div>
+
+        <!-- 作业标题 -->
+        <div class="paper-header">
+            <h1 class="paper-title">南苑森林湿地公园交通规划作业练习</h1>
+            <p class="paper-subtitle">姓名：__________ 班级：__________ 学号：__________</p>
+        </div>
+
+        <!-- 第一题：选择题 -->
+        <div class="question">
+            <div class="question-title">
+                <span>1</span>方方家住建桥，前往南苑森林湿地公园，首先应乘坐的地铁站点是？
+                <span class="question-score">（40分）</span>
+            </div>
+            <div class="option-list" id="choice-options">
+                <div class="option" data-value="A">
+                    <input type="radio" name="choice" id="optA">
+                    <label for="optA">A. 牡丹园站</label>
+                </div>
+                <div class="option" data-value="B">
+                    <input type="radio" name="choice" id="optB">
+                    <label for="optB">B. 草桥站</label>
+                </div>
+                <div class="option" data-value="C">
+                    <input type="radio" name="choice" id="optC">
+                    <label for="optC">C. 新宫站</label>
+                </div>
+                <div class="option" data-value="D">
+                    <input type="radio" name="choice" id="optD">
+                    <label for="optD">D. 槐房北站</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二题：拖拽规划题 -->
+        <div class="question">
+            <div class="question-title">
+                <span>2</span>请按正确顺序拖拽站点，完成方方从草桥到南苑森林湿地公园的交通路线规划
+                <span class="question-score">（40分）</span>
+            </div>
+            <div class="drag-area">
+                <div class="station-source" id="station-source">
+                    <div class="station-item" draggable="true" data-name="槐房北站">槐房北站</div>
+                    <div class="station-item" draggable="true" data-name="新宫">新宫</div>
+                    <div class="station-item" draggable="true" data-name="草桥">草桥</div>
+                    <div class="station-item" draggable="true" data-name="牡丹园">牡丹园</div>
+                </div>
+                <div class="route-target" id="route-target">
+                    <div class="hint-text">请将正确的站点按出行顺序拖拽到这里</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三题：判断题 -->
+        <div class="question">
+            <div class="question-title">
+                <span>3</span>方方想在周日清晨6:00前往观景台拍摄日出，该计划可行。
+                <span class="question-score">（20分）</span>
+            </div>
+            <div class="judge-options" id="judge-options">
+                <div class="judge-option" data-value="true">对</div>
+                <div class="judge-option" data-value="false">错</div>
+            </div>
+        </div>
+
+        <!-- 提交按钮 -->
+        <button class="submit-btn" id="submit-btn">提交作业</button>
+
+        <!-- 反馈区域 -->
+        <div class="feedback-area" id="feedback-area">
+            <div class="feedback-title">作业批改结果</div>
+            <div class="feedback-item" id="feedback1"></div>
+            <div class="feedback-item" id="feedback2"></div>
+            <div class="feedback-item" id="feedback3"></div>
+            <div class="feedback-item" style="font-weight: bold; margin-top: 15px;" id="total-feedback"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let totalScore = 0;
+        const scoreElement = document.getElementById('score');
+        const feedbackArea = document.getElementById('feedback-area');
+        const correctChoice = 'B'; // 选择题正确答案
+        const correctRoute = ['草桥', '新宫', '槐房北站']; // 拖拽题正确路线
+        const correctJudge = 'false'; // 判断题正确答案
+
+        // 1. 选择题交互
+        const choiceOptions = document.querySelectorAll('.option');
+        choiceOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // 取消其他选项选中状态
+                choiceOptions.forEach(opt => opt.classList.remove('selected'));
+                // 选中当前选项
+                option.classList.add('selected');
+                // 选中单选框
+                const input = option.querySelector('input');
+                input.checked = true;
+            });
+        });
+
+        // 2. 拖拽题交互
+        const stationItems = document.querySelectorAll('.station-item');
+        const routeTarget = document.getElementById('route-target');
+        const hintText = document.querySelector('.hint-text');
+
+        stationItems.forEach(station => {
+            // 开始拖拽
+            station.addEventListener('dragstart', () => {
+                station.classList.add('dragging');
+            });
+            // 结束拖拽
+            station.addEventListener('dragend', () => {
+                station.classList.remove('dragging');
+            });
+        });
+
+        // 拖拽目标区域
+        routeTarget.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        routeTarget.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const draggingStation = document.querySelector('.dragging');
+            if (draggingStation) {
+                // 隐藏提示文字
+                hintText.style.display = 'none';
+                // 克隆站点（避免原元素被移除）
+                const stationClone = draggingStation.cloneNode(true);
+                stationClone.draggable = false;
+                routeTarget.appendChild(stationClone);
+            }
+        });
+
+        // 3. 判断题交互
+        const judgeOptions = document.querySelectorAll('.judge-option');
+        judgeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                judgeOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+
+        // 4. 提交作业逻辑
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.addEventListener('click', () => {
+            totalScore = 0;
+            let feedback1 = '', feedback2 = '', feedback3 = '';
+
+            // 批改选择题
+            const selectedChoice = document.querySelector('.option.selected');
+            if (!selectedChoice) {
+                feedback1 = '<span class="wrong">【选择题】未作答，不得分！</span>';
+            } else if (selectedChoice.dataset.value === correctChoice) {
+                totalScore += 40;
+                feedback1 = '<span class="correct">【选择题】回答正确！方方从草桥站出发乘坐地铁19号线。（+40分）</span>';
+            } else {
+                feedback1 = `<span class="wrong">【选择题】回答错误！正确答案是B（草桥站）。（0分）</span>`;
+            }
+
+            // 批改拖拽题
+            const targetStations = routeTarget.querySelectorAll('.station-item');
+            const targetNames = Array.from(targetStations).map(s => s.dataset.name);
+            if (targetStations.length === 0) {
+                feedback2 = '<span class="wrong">【拖拽题】未作答，不得分！</span>';
+            } else if (JSON.stringify(targetNames) === JSON.stringify(correctRoute)) {
+                totalScore += 40;
+                feedback2 = '<span class="correct">【拖拽题】路线规划正确！草桥→新宫→槐房北站是最优路线。（+40分）</span>';
+            } else {
+                feedback2 = `<span class="wrong">【拖拽题】路线规划错误！正确顺序是草桥→新宫→槐房北站。（0分）</span>`;
+            }
+
+            // 批改判断题
+            const selectedJudge = document.querySelector('.judge-option.selected');
+            if (!selectedJudge) {
+                feedback3 = '<span class="wrong">【判断题】未作答，不得分！</span>';
+            } else if (selectedJudge.dataset.value === correctJudge) {
+                totalScore += 20;
+                feedback3 = '<span class="correct">【判断题】判断正确！观景台开放时间为9:00-21:00，6:00无法进入。（+20分）</span>';
+            } else {
+                feedback3 = `<span class="wrong">【判断题】判断错误！观景台6:00未开放，计划不可行。（0分）</span>`;
+            }
+
+            // 更新得分和反馈
+            scoreElement.textContent = totalScore;
+            document.getElementById('feedback1').innerHTML = feedback1;
+            document.getElementById('feedback2').innerHTML = feedback2;
+            document.getElementById('feedback3').innerHTML = feedback3;
+            
+            // 总评
+            let totalFeedback = '';
+            if (totalScore === 100) {
+                totalFeedback = `本次作业得分：${totalScore}分，优秀！你完全掌握了南苑森林湿地的交通规划知识～`;
+            } else if (totalScore >= 60) {
+                totalFeedback = `本次作业得分：${totalScore}分，良好！继续加油，巩固易错知识点～`;
+            } else {
+                totalFeedback = `本次作业得分：${totalScore}分，需加强练习！建议重新梳理交通路线和公园开放时间～`;
+            }
+            document.getElementById('total-feedback').textContent = totalFeedback;
+
+            // 显示反馈区域
+            feedbackArea.style.display = 'block';
+            // 游戏结束，显示返回按钮
+            document.getElementById('back-btn').style.display = 'block';
+        });
+    </script>
+<!-- 返回按钮 -->
+    <button id="back-btn" class="back-button">返回主界面</button>
+    <script>
+        // 返回按钮点击事件
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+    </body>
+</html>

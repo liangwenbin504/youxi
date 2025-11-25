@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青山不老 - 闯关练习游戏（最终正确版）</title>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f5f9f7; }
+        .game-container { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .title { text-align: center; color: #2d6a4f; font-size: 26px; margin-bottom: 25px; font-weight: bold; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .question { margin-bottom: 25px; padding: 15px; background: #f8fcf9; border-radius: 8px; }
+        .question-title { font-size: 18px; margin-bottom: 15px; color: #2c3e50; font-weight: 500; }
+        .question-score { color: #e74c3c; font-size: 14px; margin-left: 10px; font-weight: normal; }
+        /* 选项样式 */
+        .option { margin-bottom: 10px; display: flex; align-items: center; cursor: pointer; padding: 8px 12px; border-radius: 6px; transition: background 0.2s; }
+        .option:hover { background: #f0f7f5; }
+        .option input { margin-right: 10px; width: 18px; height: 18px; }
+        .option label { font-size: 16px; color: #34495e; }
+        .option.correct { background: #e8f5e9; color: #27ae60; font-weight: bold; border: 1px solid #c8e6c9; }
+        .option.incorrect { background: #ffebee; color: #e74c3c; border: 1px solid #ffcdd2; }
+        /* 下拉选择样式 */
+        .select-group { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .select-group label { font-size: 16px; color: #34495e; min-width: 120px; }
+        .select-group select { flex: 1; min-width: 200px; padding: 10px; border: 1px solid #d1e7dd; border-radius: 6px; font-size: 16px; background: white; }
+        .select-group select:focus { outline: none; border-color: #2d6a4f; }
+        /* 拖拽匹配样式 */
+        .drag-container { display: flex; gap: 20px; margin: 15px 0; flex-wrap: wrap; }
+        .drag-source, .drop-target { flex: 1; min-width: 250px; padding: 10px; border: 2px dashed #d1e7dd; border-radius: 8px; min-height: 200px; }
+        .drag-item { padding: 8px 12px; margin-bottom: 8px; background: white; border-radius: 6px; cursor: move; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .drag-item:hover { transform: translateY(-2px); }
+        .drop-hint { color: #999; font-style: italic; margin-bottom: 10px; display: block; }
+        .drop-item { padding: 8px 12px; margin-bottom: 8px; background: #fafafa; border-radius: 6px; cursor: pointer; border: 1px solid #eee; transition: background 0.2s; }
+        .drop-item.hover { background: #e8f5e9; border-color: #2d6a4f; }
+        .drop-item.correct { background: #e8f5e9; color: #27ae60; border: 1px solid #c8e6c9; font-weight: bold; }
+        .drop-item.incorrect { background: #ffebee; color: #e74c3c; border: 1px solid #ffcdd2; }
+        .match-result { display: block; margin-top: 10px; padding: 10px; border-radius: 6px; }
+        /* 按钮样式 - 修正提交按钮默认显示 */
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s; margin: 10px 5px; }
+        .btn-submit { background: #2d6a4f; color: white; display: inline-block; } /* 改为默认显示 */
+        .btn-submit:hover { background: #1e4d3b; transform: translateY(-2px); }
+        .btn-next { 
+            background: #f39c12; 
+            color: white; 
+            display: inline-block !important; 
+            font-weight: bold;
+            margin-top: 20px; 
+        }
+        .btn-next.error { 
+            background: #e74c3c; 
+        }
+        .btn-next:hover { background: #e67e22; transform: translateY(-2px); }
+        .btn-next.error:hover { background: #c0392b; }
+        /* 返回按钮样式 */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .back-button:active {
+            transform: translateY(0);
+        }
+        /* 反馈与分析 */
+        .feedback { font-size: 24px; margin: 10px 0; display: none; }
+        .feedback.ok { color: #27ae60; }
+        .feedback.no { color: #e74c3c; }
+        .feedback.no::after { content: "（点击下方「下一题」继续闯关）"; font-size: 14px; display: block; margin-top: 5px; }
+        .analysis { margin: 15px 0; padding: 10px; border-radius: 6px; font-size: 15px; line-height: 1.6; display: none; }
+        .analysis.correct { background: #e8f5e9; color: #2e7d32; }
+        .analysis.incorrect { background: #ffebee; color: #c62828; }
+        /* 结果页样式 */
+        .result-container { text-align: center; padding: 30px; background: #f8fcf9; border-radius: 12px; }
+        .result-score { font-size: 28px; color: #2d6a4f; margin: 20px 0; }
+        .result-comment { font-size: 18px; color: #34495e; line-height: 1.8; margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        .btn-restart { background: #8e44ad; color: white; margin-top: 20px; }
+        .btn-restart:hover { background: #7d3c98; }
+        /* 高亮提示 */
+        .highlight-box { background: #fff8e1; border-left: 4px solid #ffb74d; padding: 10px; margin: 15px 0; border-radius: 4px; }
+        /* 按钮容器 */
+        .btn-container { margin-top: 30px; border-top: 1px dashed #d1e7dd; padding-top: 20px; }
+        /* 匹配对样式 */
+        .match-pair { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .match-pair span { font-size: 16px; color: #34495e; min-width: 120px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">青山不老 · 闯关练习</h1>
+
+        <!-- 第1页：Q1 单选 - 读音判断 -->
+        <div class="page active" id="page1">
+            <div class="question">
+                <div class="question-title">第1关：下列加点字读音不正确的是哪一项<span class="question-score">(3分）</span></div>
+                <div class="option" data-correct="c">
+                    <input type="radio" name="q1" id="q1a" onchange="showSubmitBtn('submit1')">
+                    <label for="q1a">A. 环境：狂风肆虐(nüè) 干旱盘踞(jù)</label>
+                </div>
+                <div class="option" data-correct="c">
+                    <input type="radio" name="q1" id="q1b" onchange="showSubmitBtn('submit1')">
+                    <label for="q1b">B. 工具：铁锹(qiāo) 拄拐杖(zhǔ)</label>
+                </div>
+                <div class="option" data-correct="c">
+                    <input type="radio" name="q1" id="q1c" onchange="showSubmitBtn('submit1')">
+                    <label for="q1c">C. 结果：绿树劲挺(jìn) 碧波粼粼(lín)</label>
+                </div>
+                <div class="option" data-correct="c">
+                    <input type="radio" name="q1" id="q1d" onchange="showSubmitBtn('submit1')">
+                    <label for="q1d">D. 成就：载入史册(zǎi) 擎起青山(qíng)</label>
+                </div>
+                <div class="feedback" id="feedback1"></div>
+                <div class="analysis" id="analysis1"></div>
+                <button class="btn btn-submit" id="submit1" onclick="checkQ1()">提交答案</button>
+                <div class="btn-container">
+                    <button class="btn btn-next" id="next1" onclick="switchToPage(2)">下一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第2页：Q2 下拉 - 填“多”的词语 -->
+        <div class="page" id="page2">
+            <div class="question">
+                <div class="question-title">第2关：选择表示“多”的四字词语，补全事迹<span class="question-score">(6分）</span></div>
+                <div class="select-group">
+                    <label>形容时间久：</label>
+                    <select id="q2-1" onchange="checkQ2Ready()">
+                        <option value="">请选择</option>
+                        <option value="长年累月">长年累月</option>
+                        <option value="一朝一夕">一朝一夕</option>
+                        <option value="昙花一现">昙花一现</option>
+                    </select>
+                </div>
+                <div class="select-group">
+                    <label>形容次数多：</label>
+                    <select id="q2-2" onchange="checkQ2Ready()">
+                        <option value="">请选择</option>
+                        <option value="屡次三番">屡次三番</option>
+                        <option value="独一无二">独一无二</option>
+                        <option value="绝无仅有">绝无仅有</option>
+                    </select>
+                </div>
+                <div class="select-group">
+                    <label>形容数量多：</label>
+                    <select id="q2-3" onchange="checkQ2Ready()">
+                        <option value="">请选择</option>
+                        <option value="不计其数">不计其数</option>
+                        <option value="寥寥无几">寥寥无几</option>
+                        <option value="屈指可数">屈指可数</option>
+                    </select>
+                </div>
+                <div class="feedback" id="feedback2"></div>
+                <div class="analysis" id="analysis2"></div>
+                <button class="btn btn-submit" id="submit2" onclick="checkQ2()">提交答案</button>
+                <div class="btn-container">
+                    <button class="btn btn-next" id="next2" onclick="switchToPage(3)">下一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第3页：Q3 拖拽配对+单选 - 句子品读 -->
+        <div class="page" id="page3">
+            <div class="question">
+                <div class="question-title">第3关：品读句子，完成练习<span class="question-score">(5分）</span></div>
+                <div class="highlight-box">
+                    ①十五年啊，绿化了八条沟，造了七条防风林带、三千七百亩林网，这是多么了不起的奇迹。②青山是不会老的。
+                </div>
+
+                <!-- 3a 拖拽配对 -->
+                <div class="question-title" style="font-size:16px; margin-top:15px;">（1）拖拽配对：将左侧内容拖到右侧正确的描述上（3分）</div>
+                <div class="drag-container">
+                    <div class="drag-source">
+                        <span class="drop-hint">拖拽源：</span>
+                        <div class="drag-item" draggable="true" data-type="emotion" ondragstart="handleDrag(event)">对老人的情感</div>
+                        <div class="drag-item" draggable="true" data-type="number" ondragstart="handleDrag(event)">数字的作用</div>
+                    </div>
+                    <div class="drop-target" id="drop3" ondrop="handleDrop(event)" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)">
+                        <span class="drop-hint">匹配目标（请拖拽左侧内容到正确项）：</span>
+                        <!-- 2个正确项 -->
+                        <div class="drop-item" data-value="admire">敬佩与赞美</div>
+                        <div class="drop-item" data-value="scale">体现治沙时间长、规模大</div>
+                        <!-- 3个干扰项 -->
+                        <div class="drop-item" data-value="age">体现老人年事已高</div>
+                        <div class="drop-item" data-value="fear">对自然的畏惧心理</div>
+                        <div class="drop-item" data-value="cost">说明治沙成本低廉</div>
+                    </div>
+                </div>
+
+                <!-- 3b 单选：正确答案为B选项（id为q3b2） -->
+                <div class="question-title" style="font-size:16px; margin-top:20px;">（2）下列对“青山是不会老的”理解不正确的是（2分）</div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b1" onchange="checkQ3Ready()">
+                    <label for="q3b1">A. “青山”表面上指老人种树的奇迹</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b2" onchange="checkQ3Ready()">
+                    <label for="q3b2">B. 表达对自然万物生生不息的赞颂</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b3" onchange="checkQ3Ready()">
+                    <label for="q3b3">C. “青山”象征老人的精神像青山一样充满生机</label>
+                </div>
+                <div class="option" data-correct="B">
+                    <input type="radio" name="q3b" id="q3b4" onchange="checkQ3Ready()">
+                    <label for="q3b4">D. 饱含对造林英雄的敬佩和祝福</label>
+                </div>
+
+                <div class="feedback" id="feedback3"></div>
+                <div class="analysis" id="analysis3"></div>
+                <button class="btn btn-submit" id="submit3" onclick="checkQ3()">提交答案</button>
+                <div class="btn-container">
+                    <button class="btn btn-next" id="next3" onclick="switchToPage(4)">下一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第4页：Q4 选择+多选 - 郭万刚故事 -->
+        <div class="page" id="page4">
+            <div class="question">
+                <div class="question-title">第4关：阅读郭万刚故事，完成练习<span class="question-score">(11分）</span></div>
+                <div class="highlight-box">
+                    刚开始，没有资金，没有经验，他就用“一镢沙、一棵树”的土办法造林。可没想到，几场大风铺天盖地刮过，近一半的树苗就被沙子埋掉了。收拾着风干的死树苗，郭万刚心里不是个滋味。但望着那些发芽的活树苗，他并没有灰心：“只要有活的苗，就说明这个沙能治！”经过反复摸索，他终于总结出了“一棵树，一把草，压住沙子防风掏”的治沙方法。<br>
+                    春秋时节，是压沙栽树的黄金期。为了赶进度，郭万刚索性卷起铺盖住进沙窝里。没有房子，他就在沙地上挖个壕沟，用柴草搭出个地窝棚住；没有炉子，就用三块石头支口锅，开水泡馍当饭吃。大风一起，沙子刮到他锅碗里，吃到嘴里，把牙磨得吱吱响。
+                </div>
+
+                <!-- 4a 选择方法 -->
+                <div class="question-title" style="font-size:16px; margin-top:15px;">（1）选择郭万刚克服困难的方法（6分）</div>
+                <div class="match-pair">
+                    <span>① 树苗被埋：</span>
+                    <select id="q4-1" onchange="checkQ4Ready()">
+                        <option value="">请选择</option>
+                        <option value="correct">总结“一棵树，一把草”的治沙方法</option>
+                        <option value="wrong1">放弃治沙，等政府支援</option>
+                        <option value="wrong2">换个地方重新造林</option>
+                        <option value="wrong3">只在无风季节栽种树苗</option>
+                        <option value="wrong4">请求专家团队现场指导</option>
+                        <option value="wrong5">改用更昂贵的进口树苗</option>
+                    </select>
+                </div>
+                <div class="match-pair">
+                    <span>② 没有房子：</span>
+                    <select id="q4-2" onchange="checkQ4Ready()">
+                        <option value="">请选择</option>
+                        <option value="wrong1">住村民家蹭住</option>
+                        <option value="correct">挖壕沟，搭柴草地窝棚</option>
+                        <option value="wrong2">盖简易木板房</option>
+                        <option value="wrong3">搭建帐篷抵御风沙</option>
+                        <option value="wrong4">轮流回村居住值班</option>
+                        <option value="wrong5">向村委会申请临时住房</option>
+                    </select>
+                </div>
+                <div class="match-pair">
+                    <span>③ 没有炉子：</span>
+                    <select id="q4-3" onchange="checkQ4Ready()">
+                        <option value="">请选择</option>
+                        <option value="wrong1">吃冷干粮充饥</option>
+                        <option value="wrong2">借村民炉子做饭</option>
+                        <option value="correct">三块石头支锅，开水泡馍</option>
+                        <option value="wrong3">捡枯枝生火取暖做饭</option>
+                        <option value="wrong4">每天往返村里吃饭</option>
+                        <option value="wrong5">用便携煤气炉做饭</option>
+                    </select>
+                </div>
+
+                <!-- 4b 环境分析 -->
+                <div class="question-title" style="font-size:16px; margin-top:20px;">（2）环境描写分析（5分）</div>
+                <div class="question-title" style="font-size:14px; color:#666;">① 选出环境恶劣的语句（1分）</div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q4b1" id="q4b1a" onchange="checkQ4Ready()">
+                    <label for="q4b1a">A. 春秋时节，是压沙栽树的黄金期</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q4b1" id="q4b1b" onchange="checkQ4Ready()">
+                    <label for="q4b1b">B. 他并没有灰心："只要有活的苗，就说明这个沙能治！"</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q4b1" id="q4b1c" onchange="checkQ4Ready()">
+                    <label for="q4b1c">C. 几场大风铺天盖地刮过，近一半的树苗被埋；沙子刮到锅碗里</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q4b1" id="q4b1d" onchange="checkQ4Ready()">
+                    <label for="q4b1d">D. 经过反复摸索，他终于总结出了治沙方法</label>
+                </div>
+                <div class="option" data-correct="C">
+                    <input type="radio" name="q4b1" id="q4b1e" onchange="checkQ4Ready()">
+                    <label for="q4b1e">E. 卷起铺盖住进沙窝里，赶进度栽种树苗</label>
+                </div>
+                
+                <div class="question-title" style="font-size:14px; color:#666; margin-top:10px;">② 选出环境描写的好处（4分，多选）</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 10px 0;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="difficulty" onchange="checkQ4Ready()"> 突出治沙艰难
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="character" onchange="checkQ4Ready()"> 衬托人物品质
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="image" onchange="checkQ4Ready()"> 让人物形象更鲜明
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="wrong1" onchange="checkQ4Ready()"> 说明自然环境不可战胜
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="wrong2" onchange="checkQ4Ready()"> 暗示治沙注定失败
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" name="q4b2" value="wrong3" onchange="checkQ4Ready()"> 强调沙子质量不好
+                    </label>
+                </div>
+
+                <div class="feedback" id="feedback4"></div>
+                <div class="analysis" id="analysis4"></div>
+                <button class="btn btn-submit" id="submit4" onclick="checkQ4()">提交答案</button>
+                <div class="btn-container">
+                    <button class="btn btn-next" id="next4" onclick="switchToPage(5)">查看结果</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第5页：结果页 -->
+        <div class="page" id="page5">
+            <div class="result-container">
+                <h2 class="title">闯关结束！你的战绩来啦~</h2>
+                <div class="result-score" id="finalScore">总分：0/25 分</div>
+                <div class="result-comment" id="resultComment">
+                    <!-- 幽默评价将在这里显示 -->
+                </div>
+                <button class="btn btn-restart" onclick="restartGame()">重新闯关</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量：累计得分、拖拽配对结果
+        let totalScore = 0;
+        let dragResult = { emotion: null, number: null }; // 存储拖拽配对结果
+
+        // 正确答案库
+        const answerBank = {
+            q1: { correct: "c", analysis: "“绿树劲挺”的“劲”表“坚强有力”时读jìng，不是jìn哦！其他选项读音都对，下次别让多音字骗啦~" },
+            q2: {
+                1: { correct: "长年累月", analysis: "“长年累月”才是“时间久”，“一朝一夕”是时间短，你怕不是把“治沙”当成“闪电战”了？" },
+                2: { correct: "屡次三番", analysis: "“屡次三番”是“次数多”，选“独一无二”的话，沙子都得笑你：“我明明经常来捣乱啊！”" },
+                3: { correct: "不计其数", analysis: "树苗数量多到“不计其数”，选“寥寥无几”的话，老人可要着急补种啦！" }
+            },
+            q3: {
+                a: { 
+                    correct: { emotion: "admire", number: "scale" }, // 拖拽正确配对：emotion→admire，number→scale
+                    analysis: "拖拽配对错啦！“对老人的情感”对应“敬佩与赞美”，“数字的作用”对应“体现治沙时间长、规模大”哦~" 
+                },
+                b: { correct: "2", analysis: "“青山不老”的核心是赞美老人的奉献精神，而非单纯赞颂自然万物的生生不息，你理解偏啦~" }
+            },
+            q4: {
+                1: { correct: "correct", analysis: "郭万刚可是“治沙小能手”，哪会轻易放弃？总结方法才是王道！" },
+                2: { correct: "correct", analysis: "挖壕沟搭窝棚，这吃苦精神，沙子看了都得绕着走！" },
+                3: { correct: "correct", analysis: "三块石头支锅，开水泡馍，这就是治沙人的“荒野求生”！" },
+                b: { 
+                    correct1: "c", 
+                    correct2: ["difficulty", "character", "image"], 
+                    analysis: "环境描写是“背景板”，专门衬托郭万刚的牛！没选全的话，再品品课文~" 
+                }
+            }
+        };
+
+        // 1. 显示提交按钮（选择答案后保持显示）
+        function showSubmitBtn(btnId) {
+            const submitBtn = document.getElementById(btnId);
+            if (submitBtn) submitBtn.style.display = "inline-block";
+        }
+
+        // 2. 页面切换核心函数
+        function switchToPage(targetPageNum) {
+            document.querySelectorAll(".page").forEach(page => {
+                page.classList.remove("active");
+            });
+            const targetPage = document.getElementById(`page${targetPageNum}`);
+            if (targetPage) {
+                targetPage.classList.add("active");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+            if (targetPageNum === 5) {
+                showFinalResult();
+            }
+        }
+
+        // 3. 显示最终结果
+        function showFinalResult() {
+            document.getElementById("finalScore").textContent = `总分：${totalScore}/25 分`;
+            const commentEl = document.getElementById("resultComment");
+            let comment = "";
+            if (totalScore === 25) {
+                comment = "🎉 满分！你怕不是偷偷去跟着老人治过沙吧？连细节都拿捏得死死的，老人看了都得拍你肩膀说：“这徒弟我收了！”以后治沙队没你不行~";
+            } else if (totalScore >= 20) {
+                comment = "👏 差一点满分！治沙知识掌握得差不多了，就是偶尔手抖选错。下次仔细点，你就是下一个“青山守护者”，沙子见了你都得绕路走！";
+            } else if (totalScore >= 15) {
+                comment = "👍 中等偏上！你对青山的感情到位了，但知识点还没完全吃透。多读读课文，下次争取让老人都夸你“懂行”！";
+            } else if (totalScore >= 10) {
+                comment = "😅 刚及格边缘！你可能和沙子更熟一点，和青山还差点缘分。再琢磨琢磨课文，下次别让沙子笑话你“不懂治沙”啦！";
+            } else {
+                comment = "😂 哎呀，看来你还没和青山“认亲”成功！是不是把治沙当成堆沙子玩了？赶紧翻课文补课，不然老人可要着急喊你“再学学”啦！";
+            }
+            commentEl.textContent = comment;
+            // 游戏结束，显示返回按钮
+            document.getElementById('back-btn').style.display = 'block';
+        }
+
+        // 4. Q1 提交处理
+        function checkQ1() {
+            const checkedRadio = document.querySelector('input[name="q1"]:checked');
+            const feedbackEl = document.getElementById("feedback1");
+            const analysisEl = document.getElementById("analysis1");
+            const submitBtn = document.getElementById("submit1");
+            const nextBtn = document.getElementById("next1");
+
+            if (!checkedRadio) {
+                alert("请先选择一个答案再提交哦！");
+                return;
+            }
+
+            const userChoice = checkedRadio.id.slice(-1);
+            const isCorrect = userChoice === answerBank.q1.correct;
+
+            submitBtn.style.display = "none";
+            feedbackEl.style.display = "block";
+            if (isCorrect) {
+                feedbackEl.innerHTML = "✅ 回答正确！你这读音拿捏得很稳~";
+                feedbackEl.className = "feedback ok";
+                totalScore += 3;
+                nextBtn.classList.remove("error");
+            } else {
+                feedbackEl.innerHTML = "❌ 回答错误！再跟多音字较较劲~";
+                feedbackEl.className = "feedback no";
+                document.getElementById(`q1${userChoice}`).parentNode.classList.add("incorrect");
+                document.getElementById(`q1${answerBank.q1.correct}`).parentNode.classList.add("correct");
+                nextBtn.classList.add("error");
+            }
+            analysisEl.style.display = "block";
+            analysisEl.className = isCorrect ? "analysis correct" : "analysis incorrect";
+            analysisEl.textContent = answerBank.q1.analysis;
+        }
+
+        // 5. Q2 提交处理
+        function checkQ2Ready() {
+            const s1 = document.getElementById("q2-1").value;
+            const s2 = document.getElementById("q2-2").value;
+            const s3 = document.getElementById("q2-3").value;
+            const submitBtn = document.getElementById("submit2");
+            if (s1 && s2 && s3 && submitBtn) {
+                submitBtn.style.display = "inline-block";
+            }
+        }
+
+        function checkQ2() {
+            const s1 = document.getElementById("q2-1").value;
+            const s2 = document.getElementById("q2-2").value;
+            const s3 = document.getElementById("q2-3").value;
+            const feedbackEl = document.getElementById("feedback2");
+            const analysisEl = document.getElementById("analysis2");
+            const submitBtn = document.getElementById("submit2");
+            const nextBtn = document.getElementById("next2");
+
+            if (!s1 || !s2 || !s3) {
+                alert("请把三个下拉框都选择完成再提交哦！");
+                return;
+            }
+
+            const isCorrect1 = s1 === answerBank.q2[1].correct;
+            const isCorrect2 = s2 === answerBank.q2[2].correct;
+            const isCorrect3 = s3 === answerBank.q2[3].correct;
+            const totalCorrect = [isCorrect1, isCorrect2, isCorrect3].filter(Boolean).length;
+            totalScore += totalCorrect * 2;
+            const isAllCorrect = totalCorrect === 3;
+
+            submitBtn.style.display = "none";
+            feedbackEl.style.display = "block";
+            if (isAllCorrect) {
+                feedbackEl.innerHTML = "✅ 全对！你这“多”义词掌握得比沙子还多~";
+                feedbackEl.className = "feedback ok";
+                nextBtn.classList.remove("error");
+            } else {
+                feedbackEl.innerHTML = `❌ 对了${totalCorrect}个！再琢磨琢磨“多”的意思~`;
+                feedbackEl.className = "feedback no";
+                nextBtn.classList.add("error");
+            }
+            analysisEl.style.display = "block";
+            analysisEl.className = isAllCorrect ? "analysis correct" : "analysis incorrect";
+            let analysisText = "";
+            if (!isCorrect1) analysisText += answerBank.q2[1].analysis + "\n";
+            if (!isCorrect2) analysisText += answerBank.q2[2].analysis + "\n";
+            if (!isCorrect3) analysisText += answerBank.q2[3].analysis;
+            analysisEl.textContent = analysisText;
+        }
+
+        // 6. 拖拽交互核心函数
+        function allowDrop(ev) {
+            ev.preventDefault();
+            // 拖拽悬停时高亮目标项
+            if (ev.target.classList.contains('drop-item')) {
+                ev.target.classList.add('hover');
+            }
+        }
+
+        function handleDrag(ev) {
+            // 传递拖拽项的类型（emotion/number）
+            ev.dataTransfer.setData("text", ev.target.dataset.type);
+        }
+
+        function handleDragLeave(ev) {
+            // 离开时移除高亮，但保留已经被拖放到的项的correct状态
+            if (ev.target.classList.contains('drop-item') && !ev.target.classList.contains('correct')) {
+                ev.target.classList.remove('hover');
+            }
+        }
+
+        function handleDrop(ev) {
+            ev.preventDefault();
+            const dragType = ev.dataTransfer.getData("text");
+            const dropItem = ev.target;
+
+            // 仅允许拖到drop-item上
+            if (!dropItem.classList.contains('drop-item')) return;
+
+            // 移除当前类型之前可能拖放的项的状态
+            document.querySelectorAll('.drop-item').forEach(item => {
+                // 只移除未被选中或与当前类型无关的项的状态
+                if (dragResult[dragType] === item.dataset.value) {
+                    item.classList.remove('correct', 'incorrect');
+                }
+                item.classList.remove('hover');
+            });
+
+            // 记录拖拽结果
+            dragResult[dragType] = dropItem.dataset.value;
+            // 标记拖拽位置并保持显示状态
+            dropItem.classList.add('correct');
+
+            // 检查是否可以显示提交按钮
+            checkQ3Ready();
+        }
+
+        // 7. Q3 提交处理
+        function checkQ3Ready() {
+            // 拖拽项是否都已放置 + 单选题是否已选择
+            const isDragComplete = dragResult.emotion && dragResult.number;
+            const isRadioSelected = document.querySelector('input[name="q3b"]:checked');
+            const submitBtn = document.getElementById("submit3");
+            
+            if (isDragComplete && isRadioSelected && submitBtn) {
+                submitBtn.style.display = "inline-block";
+            }
+        }
+
+        function checkQ3() {
+            // 验证拖拽配对
+            const isDragCorrect = dragResult.emotion === answerBank.q3.a.correct.emotion && 
+                                 dragResult.number === answerBank.q3.a.correct.number;
+            const dragScore = isDragCorrect ? 3 : 0;
+
+            // 验证单选题
+            const checkedRadio = document.querySelector('input[name="q3b"]:checked');
+            const isRadioCorrect = checkedRadio ? checkedRadio.id.slice(-1) === answerBank.q3.b.correct : false;
+            const radioScore = isRadioCorrect ? 2 : 0;
+
+            // 总分计算
+            totalScore += dragScore + radioScore;
+            const isAllCorrect = isDragCorrect && isRadioCorrect;
+
+            // 更新UI
+            const feedbackEl = document.getElementById("feedback3");
+            const analysisEl = document.getElementById("analysis3");
+            const submitBtn = document.getElementById("submit3");
+            const nextBtn = document.getElementById("next3");
+
+            submitBtn.style.display = "none";
+            feedbackEl.style.display = "block";
+            if (isAllCorrect) {
+                feedbackEl.innerHTML = "✅ 全对！你对句子的品读比青山还透彻~";
+                feedbackEl.className = "feedback ok";
+                nextBtn.classList.remove("error");
+            } else {
+                feedbackEl.innerHTML = `❌ 拖拽对了${isDragCorrect ? '3分' : '0分'}，单选题对了${isRadioCorrect ? '2分' : '0分'}~`;
+                feedbackEl.className = "feedback no";
+                nextBtn.classList.add("error");
+            }
+
+            // 显示拖拽正确/错误状态
+            document.querySelectorAll('.drop-item').forEach(item => {
+                if ((item.dataset.value === answerBank.q3.a.correct.emotion && dragResult.emotion === item.dataset.value) ||
+                    (item.dataset.value === answerBank.q3.a.correct.number && dragResult.number === item.dataset.value)) {
+                    item.classList.add('correct');
+                } else if (item.dataset.value === dragResult.emotion || item.dataset.value === dragResult.number) {
+                    item.classList.add('incorrect');
+                }
+            });
+
+            // 显示单选题正确/错误状态
+            if (checkedRadio && !isRadioCorrect) {
+                checkedRadio.parentNode.classList.add('incorrect');
+                document.getElementById(`q3b${answerBank.q3.b.correct}`).parentNode.classList.add('correct');
+            }
+
+            analysisEl.style.display = "block";
+            analysisEl.className = isAllCorrect ? "analysis correct" : "analysis incorrect";
+            analysisEl.textContent = !isDragCorrect ? answerBank.q3.a.analysis : (isRadioCorrect ? "" : answerBank.q3.b.analysis);
+        }
+
+        // 8. Q4 提交处理
+        function checkQ4Ready() {
+            // 检查所有下拉框和单选、多选是否已选择
+            const s1 = document.getElementById("q4-1").value;
+            const s2 = document.getElementById("q4-2").value;
+            const s3 = document.getElementById("q4-3").value;
+            const radioChecked = document.querySelector('input[name="q4b1"]:checked');
+            const checkboxesChecked = document.querySelectorAll('input[name="q4b2"]:checked').length > 0;
+            
+            const submitBtn = document.getElementById("submit4");
+            if (s1 && s2 && s3 && radioChecked && checkboxesChecked && submitBtn) {
+                submitBtn.style.display = "inline-block";
+            }
+        }
+
+        function checkQ4() {
+            // 验证下拉选择题（6分）
+            const s1Correct = document.getElementById("q4-1").value === answerBank.q4[1].correct;
+            const s2Correct = document.getElementById("q4-2").value === answerBank.q4[2].correct;
+            const s3Correct = document.getElementById("q4-3").value === answerBank.q4[3].correct;
+            const selectScore = (s1Correct ? 2 : 0) + (s2Correct ? 2 : 0) + (s3Correct ? 2 : 0);
+
+            // 验证环境描写单选题（1分）
+            const radioChecked = document.querySelector('input[name="q4b1"]:checked');
+            const radioCorrect = radioChecked ? radioChecked.id.slice(-1) === answerBank.q4.b.correct1 : false;
+            const radioScore = radioCorrect ? 1 : 0;
+
+            // 验证多选题（4分）
+            const checkboxes = document.querySelectorAll('input[name="q4b2"]:checked');
+            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+            const correctValues = answerBank.q4.b.correct2;
+            const isAllChecked = correctValues.every(v => selectedValues.includes(v));
+            const noExtraChecked = selectedValues.every(v => correctValues.includes(v));
+            const checkboxScore = (isAllChecked && noExtraChecked) ? 4 : 0;
+
+            // 总分计算
+            totalScore += selectScore + radioScore + checkboxScore;
+            const isAllCorrect = s1Correct && s2Correct && s3Correct && radioCorrect && isAllChecked && noExtraChecked;
+
+            // 更新UI
+            const feedbackEl = document.getElementById("feedback4");
+            const analysisEl = document.getElementById("analysis4");
+            const submitBtn = document.getElementById("submit4");
+            const nextBtn = document.getElementById("next4");
+
+            submitBtn.style.display = "none";
+            feedbackEl.style.display = "block";
+            if (isAllCorrect) {
+                feedbackEl.innerHTML = "✅ 全对！你把郭万刚的故事读透了~";
+                feedbackEl.className = "feedback ok";
+                nextBtn.classList.remove("error");
+            } else {
+                feedbackEl.innerHTML = `❌ 共得${selectScore + radioScore + checkboxScore}分，再仔细读读故事吧~`;
+                feedbackEl.className = "feedback no";
+                nextBtn.classList.add("error");
+            }
+
+            // 显示错误选项标记
+            if (!s1Correct) document.getElementById("q4-1").style.borderColor = "#e74c3c";
+            if (!s2Correct) document.getElementById("q4-2").style.borderColor = "#e74c3c";
+            if (!s3Correct) document.getElementById("q4-3").style.borderColor = "#e74c3c";
+            if (!radioCorrect && radioChecked) radioChecked.parentNode.classList.add('incorrect');
+
+            analysisEl.style.display = "block";
+            analysisEl.className = isAllCorrect ? "analysis correct" : "analysis incorrect";
+            analysisEl.textContent = answerBank.q4.b.analysis;
+        }
+
+        // 9. 重新开始游戏
+        function restartGame() {
+            totalScore = 0;
+            dragResult = { emotion: null, number: null };
+            
+            // 随机排序题目页面
+            shufflePages();
+            
+            // 重置所有页面状态
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById('page1').classList.add('active');
+            
+            // 重置表单元素
+            document.querySelectorAll('input, select').forEach(el => {
+                if (el.type === 'radio' || el.type === 'checkbox') el.checked = false;
+                else if (el.tagName === 'SELECT') el.value = '';
+            });
+            
+            // 重置样式
+            document.querySelectorAll('.option, .drop-item, .select-group select').forEach(el => {
+                el.classList.remove('correct', 'incorrect');
+                if (el.tagName === 'SELECT') el.style.borderColor = '';
+            });
+            
+            // 重置反馈信息
+            document.querySelectorAll('.feedback, .analysis').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // 重置按钮状态
+            document.querySelectorAll('.btn-submit').forEach(btn => {
+                btn.style.display = 'inline-block'; // 提交按钮默认显示
+            });
+            document.querySelectorAll('.btn-next').forEach(btn => {
+                btn.classList.remove('error');
+            });
+            
+            // 重新随机排序所有选择题选项
+            shuffleOptions();
+        }
+        
+        // 10. 页面顺序随机排序函数
+        function shufflePages() {
+            // 获取所有题目页面（不包括结果页）
+            const pages = Array.from(document.querySelectorAll('.page:not(#page5)'));
+            const container = pages[0].parentNode;
+            
+            // 保存原始页面的ID映射
+            const pageMap = {};
+            pages.forEach((page, index) => {
+                pageMap[page.id] = index + 1;
+            });
+            
+            // 随机排序页面数组
+            const shuffledPages = [...pages].sort(() => Math.random() - 0.5);
+            
+            // 重新编号页面ID（保持page1始终是第一个显示的）
+            shuffledPages.forEach((page, index) => {
+                const newId = `page${index + 1}`;
+                // 保存原始页面ID和新ID的映射关系
+                window.pageIdMap = window.pageIdMap || {};
+                window.pageIdMap[newId] = page.id;
+                page.id = newId;
+            });
+            
+            // 移除所有页面
+            pages.forEach(page => page.remove());
+            
+            // 按照随机顺序重新添加页面
+            shuffledPages.forEach(page => container.appendChild(page));
+        }
+        
+        // 11. 选项随机排序函数
+        function shuffleOptions() {
+            // 获取所有页面中的选项组
+            const pages = document.querySelectorAll('.page');
+            
+            pages.forEach(page => {
+                // 处理单选题选项（radio按钮）
+                const optionGroups = page.querySelectorAll('.question-title + .option, .question-title ~ .option');
+                if (optionGroups.length > 0) {
+                    const parent = optionGroups[0].parentNode;
+                    const optionsArray = Array.from(optionGroups);
+                    
+                    // 随机排序选项数组
+                    optionsArray.sort(() => Math.random() - 0.5);
+                    
+                    // 从父节点中移除所有选项
+                    optionGroups.forEach(option => option.remove());
+                    
+                    // 按照随机顺序重新添加选项
+                    optionsArray.forEach(option => parent.insertBefore(option, parent.querySelector('.feedback')));
+                }
+                
+                // 处理多选题选项（checkbox）
+                const checkboxContainer = page.querySelector('div[style*="display: flex; flex-wrap: wrap; gap: 15px;"]');
+                if (checkboxContainer) {
+                    const checkboxes = checkboxContainer.querySelectorAll('label');
+                    const checkboxesArray = Array.from(checkboxes);
+                    
+                    // 随机排序多选框
+                    checkboxesArray.sort(() => Math.random() - 0.5);
+                    
+                    // 从容器中移除所有多选框
+                    checkboxes.forEach(cb => cb.remove());
+                    
+                    // 按照随机顺序重新添加多选框
+                    checkboxesArray.forEach(cb => checkboxContainer.appendChild(cb));
+                }
+                
+                // 处理拖拽题右边栏的答案选项
+                const dropTarget = page.querySelector('.drop-target');
+                if (dropTarget) {
+                    const dropItems = dropTarget.querySelectorAll('.drop-item');
+                    const dropItemsArray = Array.from(dropItems);
+                    
+                    // 随机排序答案选项
+                    dropItemsArray.sort(() => Math.random() - 0.5);
+                    
+                    // 从容器中移除所有答案选项
+                    dropItems.forEach(item => item.remove());
+                    
+                    // 按照随机顺序重新添加答案选项
+                    dropItemsArray.forEach(item => {
+                        // 将答案选项添加到目标区域（保留提示文字后面）
+                        const dropHint = dropTarget.querySelector('.drop-hint');
+                        if (dropHint) {
+                            dropTarget.insertBefore(item, dropHint.nextSibling);
+                        } else {
+                            dropTarget.appendChild(item);
+                        }
+                    });
+                }
+            });
+        }
+        
+        // 页面加载时执行排序
+        window.onload = function() {
+            // 先随机排序页面
+            shufflePages();
+            // 再随机排序选项
+            shuffleOptions();
+        };
+    </script>
+    <!-- 返回按钮 -->
+    <button id="back-btn" class="back-button">返回主界面</button>
+    <script>
+        // 返回按钮点击事件
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

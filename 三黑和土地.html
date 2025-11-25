@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《三黑和土地》互动学习游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            position: relative; /* 为花花动画定位做准备 */
+        }
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .game-section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            color: #3498db;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        .question {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #34495e;
+        }
+        /* 原文展示样式 */
+        .text-original {
+            background: #f0f8ff;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+        /* 返回按钮样式 */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: block;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .back-button:active {
+            transform: translateY(0);
+        }
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option {
+            padding: 12px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background: #d5dbdb;
+        }
+        /* 单选选中样式（未提交前） */
+        .option.selected-single {
+            background: #b8d4f5;
+            color: #2c3e50;
+        }
+        /* 单选正确/错误样式 */
+        .option.correct {
+            background: #2ecc71;
+            color: white;
+        }
+        .option.incorrect {
+            background: #e74c3c;
+            color: white;
+        }
+        /* 多选选中样式（蓝色） */
+        .option.selected {
+            background: #3498db;
+            color: white;
+        }
+        /* 提交按钮样式 */
+        .submit-btn {
+            padding: 10px 25px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+        .submit-btn:hover {
+            background: #2980b9;
+        }
+        /* 新增：提交按钮禁用样式 */
+        .submit-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none; /* 默认隐藏 */
+        }
+        .feedback.correct {
+            background: #dff0d8;
+            color: #3c763d;
+        }
+        .feedback.incorrect {
+            background: #f2dede;
+            color: #a94442;
+        }
+        .feedback.tip {
+            background: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .text-analysis {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            color: #34495e;
+            line-height: 1.6;
+        }
+        .final-score {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-top: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            display: none;
+        }
+        /* 评价文本样式 */
+        .score-comment {
+            font-size: 1.2rem;
+            margin: 15px 0;
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .restart-btn {
+            padding: 12px 25px;
+            background: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .restart-btn:hover {
+            background: #d35400;
+        }
+        /* 花花动画样式（时长5秒） */
+        .flower-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8rem;
+            z-index: 9999;
+            opacity: 0;
+            animation: flowerBounce 5s ease-in-out forwards;
+            pointer-events: none; /* 不遮挡点击 */
+        }
+        @keyframes flowerBounce {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 花花动画容器 -->
+    <div class="flower-animation" id="flowerAnimation">🌸</div>
+
+    <div class="game-container">
+        <h1 class="title">《三黑和土地》互动学习游戏</h1>
+
+        <!-- 第一关：生字词闯关 -->
+        <div class="game-section" id="section1">
+            <h2 class="section-title">第一关：生字词闯关</h2>
+            
+            <div class="question">1. 下列字形和加点字的读音有误的一项是？</div>
+            <div class="option-group" id="optionGroup1">
+                <div class="option" data-correct="false">A. 疙瘩 蝈蝈儿(guō)</div>
+                <div class="option" data-correct="false">B. 舒服 荞麦(qiáo)</div>
+                <div class="option" data-correct="true">C. 叫唤 蹚坏(tāng)</div>
+                <div class="option" data-correct="false">D. 翻身 闺女(guī)</div>
+            </div>
+            <button class="submit-btn" id="submit1">提交答案</button>
+            <div class="feedback" id="feedback1"></div>
+
+            <div class="question">2. 农民一有了土地，就把整个生命______了土地（选择课文原词）？</div>
+            <div class="option-group" id="optionGroup2">
+                <div class="option" data-correct="false">A. 融入</div>
+                <div class="option" data-correct="true">B. 投入</div>
+                <div class="option" data-correct="false">C. 注入</div>
+                <div class="option" data-correct="false">D. 放进</div>
+                <div class="option" data-correct="false">E. 倾注</div>
+            </div>
+            <button class="submit-btn" id="submit2">提交答案</button>
+            <div class="feedback" id="feedback2"></div>
+        </div>
+
+        <!-- 第二关：句子赏析关 -->
+        <div class="game-section" id="section2">
+            <h2 class="section-title">第二关：句子赏析关</h2>
+            <div class="text-original">
+                原文节选：三黑从来没睡过这么好的床，今天准备好了，叫麦籽儿睡上。这么好的床，麦籽儿躺下去挺舒服，就想发芽，赶紧钻出来吸些雨露。三黑耙地，耙得又平又顺溜，看起来好像妇女们刚梳的头。他笑嘻嘻的，连嘴都合不上。地里的蝈蝈儿也叫得更欢。活像旱天的鹅，一见了水就连头带尾巴钻进水里。
+            </div>
+            
+            <div class="question">1. “活像旱天的鹅，一见了水就连头带尾巴钻进水里”运用了什么修辞手法？</div>
+            <div class="option-group" id="optionGroup3">
+                <div class="option" data-correct="false">A. 拟人</div>
+                <div class="option" data-correct="true">B. 比喻</div>
+                <div class="option" data-correct="false">C. 排比</div>
+                <div class="option" data-correct="false">D. 夸张</div>
+            </div>
+            <button class="submit-btn" id="submit3">提交答案</button>
+            <div class="feedback" id="feedback3"></div>
+
+            <div class="question">2. 这句话表达了农民对土地怎样的情感？（多选）</div>
+            <div class="option-group" data-type="multiple" id="optionGroup4">
+                <div class="option" data-correct="true">A. 热爱</div>
+                <div class="option" data-correct="true">B. 珍视</div>
+                <div class="option" data-correct="false">C. 厌恶</div>
+                <div class="option" data-correct="true">D. 依赖</div>
+            </div>
+            <button class="submit-btn" id="submit4">提交答案</button>
+            <div class="feedback" id="feedback4"></div>
+
+            <div class="question">3. 下列句子中，和“活像旱天的鹅，一见了水就连头带尾巴钻进水里”运用相同修辞手法的一项是？</div>
+            <div class="option-group" id="optionGroup5">
+                <div class="option" data-correct="false">A. 蝈蝈儿在地里欢快地唱歌。</div>
+                <div class="option" data-correct="true">B. 麦田像一片金色的海洋。</div>
+                <div class="option" data-correct="false">C. 他种的麦子，一穗有三尺长。</div>
+                <div class="option" data-correct="false">D. 春天来了，花开了，草绿了，鸟叫了。</div>
+                <div class="option" data-correct="false">E. 土地笑了，露出了松软的胸膛。</div>
+            </div>
+            <button class="submit-btn" id="submit5">提交答案</button>
+            <div class="feedback" id="feedback5"></div>
+        </div>
+
+        <!-- 第三关：诗歌理解关 -->
+        <div class="game-section" id="section3">
+            <h2 class="section-title">第三关：诗歌理解关</h2>
+            <div class="text-original">
+                《春宵伴着细雨》节选：<br>
+                淅淅沥沥，淅淅沥沥，是春雨在敲窗吗？是春雨在抚摸麦苗吗？是春雨在亲吻土地吗？<br>
+                听着，听着，我仿佛听见了种子发芽的声音，听见了麦苗拔节的声音。<br>
+                春雨钻进泥土，像一个淘气的孩子，偷偷地和泥土说着悄悄话。泥土酥软了，墒情足了，农民伯伯的脸上露出了笑容。<br>
+                夜深了，雨声还在继续，雨声织成农民的梦，梦里是金黄的麦浪，是沉甸甸的谷穗。<br>
+                农民们躺在床上，感到夜长不能马上起身，又怕夜短不够墒<sup>①</sup>深。<br>
+                <span style="font-family: KaiTi, '楷体', serif;">①墒：指的是土地的湿度，即土地上的水的含量。</span>
+            </div>
+            
+            <div class="question">1. 结合《春宵伴着细雨》节选，下列对诗歌理解不正确的一项是？</div>
+            <div class="option-group" id="optionGroup6">
+                <div class="option" data-correct="false">A. 第一节用连续问句引发想象。</div>
+                <div class="option" data-correct="false">B. 第一节从听觉角度写春雨。</div>
+                <div class="option" data-correct="false">C. 第二节用拟人手法写春雨入地。</div>
+                <div class="option" data-correct="true">D. “雨声织成农民的梦”是因为雨声悦耳易入梦。</div>
+            </div>
+            <button class="submit-btn" id="submit6">提交答案</button>
+            <div class="feedback" id="feedback6"></div>
+
+            <div class="question">2. “感到夜长不能马上起身，又怕夜短不够墒深”是否矛盾？原因是什么？</div>
+            <div class="option-group" id="optionGroup7">
+                <div class="option" data-correct="true">A. 不矛盾，体现农民盼耕种又怕墒情不足的复杂心情。</div>
+                <div class="option" data-correct="false">B. 矛盾，因为前后表述的夜的长短想法相互冲突。</div>
+                <div class="option" data-correct="false">C. 不矛盾，因为农民夜晚失眠觉得夜长，白天劳作觉得夜短。</div>
+                <div class="option" data-correct="false">D. 不矛盾，因为夜长是想多休息，夜短是担心下雨时间不够。</div>
+                <div class="option" data-correct="false">E. 矛盾，因为农民既想早起种地又想睡懒觉。</div>
+                <div class="option" data-correct="false">F. 不矛盾，因为夜长和夜短是不同地区的农民感受。</div>
+            </div>
+            <button class="submit-btn" id="submit7">提交答案</button>
+            <div class="feedback" id="feedback7"></div>
+
+            <div class="text-analysis">
+                <h3>诗歌主题提炼</h3>
+                <p>《三黑和土地》与《春宵伴着细雨》都表达了对土地的深厚情感，前者体现农民获得土地后的喜悦与珍视，后者展现土地滋养万物的生机与农民对丰收的期盼。</p>
+            </div>
+        </div>
+
+        <!-- 最终得分 -->
+        <div class="final-score" id="finalScore">
+            <h2>恭喜你完成所有关卡！</h2>
+            <p>你的得分：<span id="score">0</span>/70</p>
+            <p class="score-comment" id="scoreComment"></p>
+            <button class="restart-btn" onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        const totalQuestions = 7; // 总共7题，每题10分
+        const flowerAnimation = document.getElementById('flowerAnimation');
+        const scoreComment = document.getElementById('scoreComment'); // 评价文本元素
+        // 记录每个题是否已提交（避免重复计分）
+        const submittedQuestions = new Array(totalQuestions).fill(false);
+        // 初始化花花动画隐藏
+        flowerAnimation.style.display = 'none';
+        
+        // 关卡顺序随机排序函数
+        function shuffleSections() {
+            // 获取所有游戏关卡（不包括最终得分部分）
+            const sections = Array.from(document.querySelectorAll('.game-section'));
+            const container = sections[0].parentNode;
+            
+            // 随机排序关卡数组
+            const shuffledSections = [...sections].sort(() => Math.random() - 0.5);
+            
+            // 移除所有关卡
+            sections.forEach(section => section.remove());
+            
+            // 按照随机顺序重新添加关卡
+            shuffledSections.forEach(section => container.appendChild(section));
+        }
+        
+        // 选项随机排序函数
+        function shuffleOptions() {
+            // 获取所有选项组
+            const optionGroups = document.querySelectorAll('.option-group');
+            optionGroups.forEach(group => {
+                // 获取选项组中的所有选项
+                const options = Array.from(group.querySelectorAll('.option'));
+                // 随机排序选项
+                const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+                // 清空选项组
+                group.innerHTML = '';
+                // 将随机排序后的选项添加回选项组
+                shuffledOptions.forEach(option => {
+                    group.appendChild(option);
+                });
+            });
+        }
+        
+        // 页面加载时执行随机排序
+        function initializeGame() {
+            // 先随机排序关卡
+            shuffleSections();
+            // 再随机排序选项
+            shuffleOptions();
+        }
+        
+        // 初始化游戏
+        initializeGame();
+
+        // 1. 处理单选题的选项选中逻辑（未提交前的选中样式）
+        document.querySelectorAll('.option-group:not([data-type="multiple"]) .option').forEach(option => {
+            option.addEventListener('click', function() {
+                const parentGroup = this.parentElement;
+                // 清除同组其他选项的选中样式
+                parentGroup.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected-single');
+                });
+                // 为当前选项添加选中样式
+                this.classList.add('selected-single');
+                // 清除该题的反馈（重新选择后重置）
+                const feedback = document.getElementById(`feedback${parentGroup.id.replace('optionGroup', '')}`);
+                if (feedback) {
+                    feedback.style.display = 'none';
+                    feedback.textContent = '';
+                    feedback.className = 'feedback'; // 重置类名
+                }
+            });
+        });
+
+        // 2. 处理多选题的选项选中逻辑（蓝色选中样式，保留原有切换逻辑）
+        document.querySelectorAll('.option-group[data-type="multiple"] .option').forEach(option => {
+            option.addEventListener('click', function() {
+                this.classList.toggle('selected');
+                // 清除该题的反馈（重新选择后重置）
+                const parentGroup = this.parentElement;
+                const feedback = document.getElementById(`feedback${parentGroup.id.replace('optionGroup', '')}`);
+                if (feedback) {
+                    feedback.style.display = 'none';
+                    feedback.textContent = '';
+                    feedback.className = 'feedback'; // 重置类名
+                }
+            });
+        });
+
+        // 3. 通用提交答案处理函数（核心：提交后禁用按钮）
+        function handleSubmit(submitId, optionGroupId, feedbackId, isMultiple = false) {
+            const submitBtn = document.getElementById(submitId);
+            const optionGroup = document.getElementById(optionGroupId);
+            const feedback = document.getElementById(feedbackId);
+            const questionIndex = parseInt(submitId.replace('submit', '')) - 1; // 转为0-6的索引
+
+            submitBtn.addEventListener('click', function() {
+                // 核心修改：点击后立即禁用提交按钮，实现仅提交一次
+                submitBtn.disabled = true;
+
+                // 重置反馈样式和内容（防止残留）
+                feedback.className = 'feedback';
+                feedback.textContent = '';
+                feedback.style.display = 'block'; // 强制显示反馈面板
+                // 标记是否回答正确
+                let isCorrect = false;
+
+                if (isMultiple) {
+                    // 处理多选题逻辑
+                    const selectedOptions = optionGroup.querySelectorAll('.option.selected');
+                    const correctOptions = optionGroup.querySelectorAll('.option[data-correct="true"]');
+                    // 判断：选全正确选项且未选错误选项
+                    isCorrect = selectedOptions.length === correctOptions.length && 
+                        Array.from(selectedOptions).every(opt => opt.dataset.correct === 'true');
+
+                    if (selectedOptions.length === 0) {
+                        feedback.classList.add('tip');
+                        feedback.textContent = '💡 请至少选择一个选项后再提交！';
+                        return;
+                    }
+                } else {
+                    // 处理单选题逻辑
+                    const selectedOption = optionGroup.querySelector('.option.selected-single');
+                    if (!selectedOption) {
+                        feedback.classList.add('tip');
+                        feedback.textContent = '💡 请先选择一个选项后再提交！';
+                        return;
+                    }
+                    // 判断是否正确
+                    isCorrect = selectedOption.getAttribute('data-correct') === 'true';
+                    // 清除选中样式，添加正确/错误样式
+                    optionGroup.querySelectorAll('.option').forEach(opt => {
+                        opt.classList.remove('selected-single');
+                    });
+                    selectedOption.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+
+                // 显示反馈并计分（仅首次提交时计分，此处按钮已禁用，无需重复判断）
+                if (!submittedQuestions[questionIndex]) {
+                    if (isCorrect) {
+                        feedback.classList.add('correct');
+                        feedback.textContent = '✅ 回答正确！加10分~';
+                        score += 10;
+                    } else {
+                        feedback.classList.add('incorrect');
+                        if (isMultiple) {
+                            feedback.textContent = '❌ 回答错误，正确答案是【热爱、珍视、依赖】三个选项哦～';
+                        } else {
+                            const correctAns = optionGroup.querySelector('[data-correct="true"]').textContent;
+                            feedback.textContent = `❌ 回答错误，正确答案是：${correctAns}，再想想呀～`;
+                        }
+                    }
+                    submittedQuestions[questionIndex] = true; // 标记为已提交
+                }
+
+                checkAllCompleted(); // 检查是否所有题都完成
+            });
+        }
+
+        // 为7道题绑定提交事件（按顺序：单选、单选、单选、多选、单选、单选、单选）
+        handleSubmit('submit1', 'optionGroup1', 'feedback1');
+        handleSubmit('submit2', 'optionGroup2', 'feedback2');
+        handleSubmit('submit3', 'optionGroup3', 'feedback3');
+        handleSubmit('submit4', 'optionGroup4', 'feedback4', true); // 多选题
+        handleSubmit('submit5', 'optionGroup5', 'feedback5');
+        handleSubmit('submit6', 'optionGroup6', 'feedback6');
+        handleSubmit('submit7', 'optionGroup7', 'feedback7');
+
+        // 生成得分评价的函数
+        function getScoreComment(score) {
+            if (score === 70) {
+                return '送你花花，愿你笑靥发发～ 🌸';
+            } else if (score === 60) {
+                return '无限风光在险峰，险峰上面有花花 🌸';
+            } else if (score >= 50) {
+                return '差一点点就登顶，再努努力摘花花～ 🌸';
+            } else if (score >= 30) {
+                return '土地耕耘需耐心，答题也是如此哦，下次多薅几朵花花～ 🌸';
+            } else {
+                return '没关系，三黑也有开荒的新手期，重新来过攒花花～ 🌸';
+            }
+        }
+
+        // 检查所有题目是否都已提交
+        function checkAllCompleted() {
+            const allSubmitted = submittedQuestions.every(status => status === true);
+            if (allSubmitted) {
+                document.getElementById('score').textContent = score;
+                // 设置得分评价
+                scoreComment.textContent = getScoreComment(score);
+                document.getElementById('finalScore').style.display = 'block';
+                // 满分显示花花动画（5秒后隐藏）
+                if (score === 70) {
+                    flowerAnimation.style.display = 'block';
+                    setTimeout(() => {
+                        flowerAnimation.style.display = 'none';
+                    }, 5000); // 动画显示5秒
+                }
+                // 显示返回按钮
+                document.getElementById('back-btn').style.display = 'block';
+            }
+        }
+
+        // 重新开始游戏（核心：恢复所有提交按钮的可用状态）
+        function restartGame() {
+            score = 0;
+            submittedQuestions.fill(false); // 重置提交状态
+            // 清除所有选项的样式
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected-single', 'selected', 'correct', 'incorrect');
+            });
+            // 清除所有反馈
+            document.querySelectorAll('.feedback').forEach(feedback => {
+                feedback.style.display = 'none';
+                feedback.textContent = '';
+                feedback.className = 'feedback';
+            });
+            // 核心：恢复所有提交按钮的可用状态
+            document.querySelectorAll('.submit-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+            // 清空评价文本、隐藏得分面板和花花动画
+            scoreComment.textContent = '';
+            document.getElementById('finalScore').style.display = 'none';
+            flowerAnimation.style.display = 'none';
+            // 隐藏返回按钮
+            document.getElementById('back-btn').style.display = 'none';
+            // 更新分数显示
+            document.getElementById('score').textContent = 0;
+            
+            // 重新随机排序关卡和选项
+            initializeGame();
+        }
+    </script>
+<!-- 返回按钮 -->
+    <button id="back-btn" class="back-button">返回主界面</button>
+    <script>
+        // 返回按钮点击事件
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+    </body>
+</html>
