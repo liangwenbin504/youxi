@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字拼图 - 数学一年级</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-title {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .game-content {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 0 auto 20px;
+        }
+        
+        .puzzle-cell {
+            aspect-ratio: 1;
+            background: #667eea;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .puzzle-cell:hover {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+        
+        .puzzle-cell.empty {
+            background: #e9ecef;
+            cursor: default;
+        }
+        
+        .puzzle-cell.empty:hover {
+            background: #e9ecef;
+            transform: none;
+        }
+        
+        .puzzle-cell.correct {
+            background: #28a745;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .moves-count {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .timer {
+            font-weight: bold;
+            color: #f5576c;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #667eea;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">数字拼图</h1>
+        
+        <div class="progress">
+            <div class="progress-bar" style="width: 0%"></div>
+        </div>
+        
+        <div class="score-display">得分: 0</div>
+        
+        <div class="game-content">
+            <div class="game-info">
+                <span class="moves-count">步数: 0</span> | 
+                <span class="timer">时间: 0秒</span>
+            </div>
+            <div class="puzzle-grid" id="puzzleGrid"></div>
+            <div style="margin-top: 20px; font-size: 16px; color: #666;">请将数字按顺序排列成1-8，空白格在右下角</div>
+        </div>
+        
+        <div class="game-controls">
+            <button class="btn btn-primary" id="resetBtn">重新开始</button>
+            <button class="btn btn-secondary" id="submitBtn">提交答案</button>
+        </div>
+    </div>
+
+    <script>
+        // 数字拼图游戏
+        class NumberPuzzleGame {
+            constructor() {
+                this.gridSize = 3;
+                this.totalCells = this.gridSize * this.gridSize;
+                this.currentGrid = [];
+                this.solution = [];
+                this.emptyCellIndex = 0;
+                this.moves = 0;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.secondsElapsed = 0;
+                this.init();
+            }
+
+            init() {
+                this.createSolution();
+                this.resetGame();
+                this.bindEvents();
+            }
+
+            // 创建解决方案
+            createSolution() {
+                this.solution = [];
+                for (let i = 1; i < this.totalCells; i++) {
+                    this.solution.push(i);
+                }
+                this.solution.push(0); // 0表示空白格
+            }
+
+            // 打乱拼图
+            shuffleGrid() {
+                do {
+                    this.currentGrid = [...this.solution];
+                    // Fisher-Yates 洗牌算法
+                    for (let i = this.currentGrid.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [this.currentGrid[i], this.currentGrid[j]] = [this.currentGrid[j], this.currentGrid[i]];
+                    }
+                    this.emptyCellIndex = this.currentGrid.indexOf(0);
+                } while (!this.isSolvable() || this.isSolved());
+            }
+
+            // 检查拼图是否可解
+            isSolvable() {
+                let inversions = 0;
+                for (let i = 0; i < this.totalCells; i++) {
+                    if (this.currentGrid[i] === 0) continue;
+                    for (let j = i + 1; j < this.totalCells; j++) {
+                        if (this.currentGrid[j] === 0) continue;
+                        if (this.currentGrid[i] > this.currentGrid[j]) {
+                            inversions++;
+                        }
+                    }
+                }
+                
+                // 对于3x3网格，如果逆序数为偶数则可解
+                return inversions % 2 === 0;
+            }
+
+            // 检查拼图是否已完成
+            isSolved() {
+                return JSON.stringify(this.currentGrid) === JSON.stringify(this.solution);
+            }
+
+            // 重置游戏
+            resetGame() {
+                this.moves = 0;
+                this.secondsElapsed = 0;
+                this.startTime = Date.now();
+                this.shuffleGrid();
+                this.updateDisplay();
+                this.startTimer();
+            }
+
+            // 开始计时器
+            startTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+                this.timerInterval = setInterval(() => {
+                    this.secondsElapsed++;
+                    this.updateTimer();
+                }, 1000);
+            }
+
+            // 更新计时器显示
+            updateTimer() {
+                const timerElement = document.querySelector('.timer');
+                timerElement.textContent = `时间: ${this.secondsElapsed}秒`;
+            }
+
+            // 更新游戏显示
+            updateDisplay() {
+                const gridElement = document.getElementById('puzzleGrid');
+                gridElement.innerHTML = '';
+                
+                this.currentGrid.forEach((value, index) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'puzzle-cell';
+                    
+                    if (value === 0) {
+                        cell.classList.add('empty');
+                    } else {
+                        cell.textContent = value;
+                        if (value === this.solution[index]) {
+                            cell.classList.add('correct');
+                        }
+                    }
+                    
+                    cell.dataset.index = index;
+                    cell.addEventListener('click', () => this.handleCellClick(index));
+                    gridElement.appendChild(cell);
+                });
+                
+                // 更新步数
+                const movesElement = document.querySelector('.moves-count');
+                movesElement.textContent = `步数: ${this.moves}`;
+                
+                // 更新进度条
+                this.updateProgress();
+                
+                // 检查是否完成
+                if (this.isSolved()) {
+                    this.gameComplete();
+                }
+            }
+
+            // 处理单元格点击
+            handleCellClick(index) {
+                if (this.canMove(index)) {
+                    this.swapCells(index, this.emptyCellIndex);
+                    this.emptyCellIndex = index;
+                    this.moves++;
+                    this.updateDisplay();
+                }
+            }
+
+            // 检查是否可以移动
+            canMove(index) {
+                const row = Math.floor(index / this.gridSize);
+                const col = index % this.gridSize;
+                const emptyRow = Math.floor(this.emptyCellIndex / this.gridSize);
+                const emptyCol = this.emptyCellIndex % this.gridSize;
+                
+                // 检查是否相邻（上下左右）
+                return (
+                    (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+                    (Math.abs(col - emptyCol) === 1 && row === emptyRow)
+                );
+            }
+
+            // 交换单元格
+            swapCells(index1, index2) {
+                [this.currentGrid[index1], this.currentGrid[index2]] = [this.currentGrid[index2], this.currentGrid[index1]];
+            }
+
+            // 更新进度条
+            updateProgress() {
+                const progressBar = document.querySelector('.progress-bar');
+                let correctCount = 0;
+                for (let i = 0; i < this.totalCells; i++) {
+                    if (this.currentGrid[i] === this.solution[i]) {
+                        correctCount++;
+                    }
+                }
+                const progress = (correctCount / this.totalCells) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            // 游戏完成
+            gameComplete() {
+                clearInterval(this.timerInterval);
+                
+                // 计算得分（基于步数和时间）
+                const baseScore = 100;
+                const movePenalty = Math.min(50, this.moves * 2);
+                const timePenalty = Math.min(30, this.secondsElapsed * 0.5);
+                const finalScore = Math.max(0, baseScore - movePenalty - timePenalty);
+                
+                // 向主界面发送游戏完成消息
+                window.parent.postMessage({
+                    type: 'gameComplete',
+                    score: parseFloat(finalScore.toFixed(1))
+                }, '*');
+            }
+
+            // 绑定事件
+            bindEvents() {
+                const resetBtn = document.getElementById('resetBtn');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                resetBtn.addEventListener('click', () => this.resetGame());
+                submitBtn.addEventListener('click', () => {
+                    if (this.isSolved()) {
+                        this.gameComplete();
+                    } else {
+                        alert('拼图还未完成，请继续！');
+                    }
+                });
+            }
+        }
+        
+        // 初始化游戏
+        document.addEventListener('DOMContentLoaded', () => {
+            new NumberPuzzleGame();
+        });
+    </script>
+</body>
+</html>

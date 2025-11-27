@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏模板</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-title {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .game-content {
+            margin-bottom: 30px;
+        }
+        
+        .question {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .option {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .option:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .option.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #667eea;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">游戏标题</h1>
+        
+        <div class="progress">
+            <div class="progress-bar" style="width: 0%"></div>
+        </div>
+        
+        <div class="score-display">得分: 0</div>
+        
+        <div class="game-content">
+            <!-- 游戏内容将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="game-controls">
+            <button class="btn btn-primary" id="nextBtn">下一题</button>
+            <button class="btn btn-secondary" id="submitBtn">提交答案</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏模板基础类
+        class GameTemplate {
+            constructor() {
+                this.currentQuestionIndex = 0;
+                this.correctAnswers = 0;
+                this.totalQuestions = 0;
+                this.questions = [];
+                this.selectedAnswers = [];
+                this.init();
+            }
+
+            init() {
+                // 初始化游戏数据
+                this.loadQuestions();
+                
+                // 绑定事件
+                this.bindEvents();
+                
+                // 显示第一题
+                this.displayQuestion();
+            }
+
+            // 加载游戏题目（子类需要重写）
+            loadQuestions() {
+                // 默认示例题目
+                this.questions = [
+                    {
+                        question: "示例问题1",
+                        options: ["选项A", "选项B", "选项C", "选项D"],
+                        correctAnswer: 0
+                    },
+                    {
+                        question: "示例问题2",
+                        options: ["选项A", "选项B", "选项C", "选项D"],
+                        correctAnswer: 1
+                    }
+                ];
+                this.totalQuestions = this.questions.length;
+            }
+
+            // 绑定事件
+            bindEvents() {
+                const nextBtn = document.getElementById('nextBtn');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                nextBtn.addEventListener('click', () => this.nextQuestion());
+                submitBtn.addEventListener('click', () => this.submitGame());
+            }
+
+            // 显示题目
+            displayQuestion() {
+                if (this.currentQuestionIndex >= this.totalQuestions) {
+                    this.submitGame();
+                    return;
+                }
+                
+                const question = this.questions[this.currentQuestionIndex];
+                const gameContent = document.querySelector('.game-content');
+                
+                gameContent.innerHTML = `
+                    <div class="question">${question.question}</div>
+                    <div class="options">
+                        ${question.options.map((option, index) => 
+                            `<div class="option" data-index="${index}">${option}</div>`
+                        ).join('')}
+                    </div>
+                `;
+                
+                // 绑定选项点击事件
+                const options = document.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.addEventListener('click', (e) => this.selectOption(e));
+                });
+                
+                // 更新进度条
+                this.updateProgress();
+            }
+
+            // 选择选项
+            selectOption(e) {
+                // 移除其他选项的选中状态
+                const options = document.querySelectorAll('.option');
+                options.forEach(opt => opt.classList.remove('selected'));
+                
+                // 添加当前选项的选中状态
+                const selectedOption = e.target;
+                selectedOption.classList.add('selected');
+                
+                // 保存选中答案
+                this.selectedAnswers[this.currentQuestionIndex] = parseInt(selectedOption.dataset.index);
+            }
+
+            // 下一题
+            nextQuestion() {
+                // 检查是否已选择答案
+                if (this.selectedAnswers[this.currentQuestionIndex] === undefined) {
+                    alert('请选择一个答案');
+                    return;
+                }
+                
+                // 检查答案是否正确
+                const question = this.questions[this.currentQuestionIndex];
+                if (this.selectedAnswers[this.currentQuestionIndex] === question.correctAnswer) {
+                    this.correctAnswers++;
+                }
+                
+                // 更新得分显示
+                this.updateScore();
+                
+                // 显示正确答案
+                this.showCorrectAnswer();
+                
+                // 延迟进入下一题
+                setTimeout(() => {
+                    this.currentQuestionIndex++;
+                    this.displayQuestion();
+                }, 1000);
+            }
+
+            // 显示正确答案
+            showCorrectAnswer() {
+                const options = document.querySelectorAll('.option');
+                const question = this.questions[this.currentQuestionIndex];
+                
+                options.forEach((option, index) => {
+                    if (index === question.correctAnswer) {
+                        option.classList.add('correct');
+                    } else if (index === this.selectedAnswers[this.currentQuestionIndex]) {
+                        option.classList.add('incorrect');
+                    }
+                });
+            }
+
+            // 更新进度条
+            updateProgress() {
+                const progressBar = document.querySelector('.progress-bar');
+                const progress = ((this.currentQuestionIndex + 1) / this.totalQuestions) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            // 更新得分显示
+            updateScore() {
+                const scoreDisplay = document.querySelector('.score-display');
+                scoreDisplay.textContent = `得分: ${this.correctAnswers}/${this.totalQuestions}`;
+            }
+
+            // 提交游戏
+            submitGame() {
+                // 计算最终得分
+                const score = (this.correctAnswers / this.totalQuestions) * 100;
+                const finalScore = parseFloat(score.toFixed(1));
+                
+                // 向主界面发送游戏完成消息
+                window.parent.postMessage({
+                    type: 'gameComplete',
+                    score: finalScore
+                }, '*');
+            }
+        }
+        
+        // 初始化游戏
+        document.addEventListener('DOMContentLoaded', () => {
+            new GameTemplate();
+        });
+    </script>
+</body>
+</html>

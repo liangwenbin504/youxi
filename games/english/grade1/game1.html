@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字母配对 - 英语一年级</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-title {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .game-content {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .letter-display {
+            font-size: 72px;
+            font-weight: bold;
+            color: #4facfe;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .option {
+            padding: 25px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+        
+        .option:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .option.selected {
+            background: #4facfe;
+            color: white;
+            border-color: #4facfe;
+        }
+        
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .option.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #3a9efd;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #4facfe;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #4facfe;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">字母配对</h1>
+        
+        <div class="progress">
+            <div class="progress-bar" style="width: 0%"></div>
+        </div>
+        
+        <div class="score-display">得分: 0</div>
+        
+        <div class="game-content">
+            <div class="game-info">请为大写字母选择对应的小写字母</div>
+            <div class="letter-display" id="letterDisplay">A</div>
+            <div class="options" id="optionsContainer"></div>
+        </div>
+        
+        <div class="game-controls">
+            <button class="btn btn-primary" id="nextBtn">下一题</button>
+            <button class="btn btn-secondary" id="submitBtn">提交答案</button>
+        </div>
+    </div>
+
+    <script>
+        // 字母配对游戏
+        class LetterMatchingGame {
+            constructor() {
+                this.currentQuestionIndex = 0;
+                this.correctAnswers = 0;
+                this.totalQuestions = 0;
+                this.questions = [];
+                this.selectedAnswers = [];
+                this.init();
+            }
+
+            init() {
+                this.loadQuestions();
+                this.bindEvents();
+                this.displayQuestion();
+            }
+
+            // 加载字母配对题目
+            loadQuestions() {
+                // 生成26个字母的配对题目
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                this.questions = [];
+                
+                for (let i = 0; i < 10; i++) {
+                    const randomIndex = Math.floor(Math.random() * letters.length);
+                    const uppercase = letters[randomIndex];
+                    const lowercase = uppercase.toLowerCase();
+                    
+                    // 生成干扰选项
+                    const options = [lowercase];
+                    while (options.length < 4) {
+                        const randomDistractor = letters[Math.floor(Math.random() * letters.length)].toLowerCase();
+                        if (!options.includes(randomDistractor)) {
+                            options.push(randomDistractor);
+                        }
+                    }
+                    
+                    // 打乱选项顺序
+                    for (let j = options.length - 1; j > 0; j--) {
+                        const k = Math.floor(Math.random() * (j + 1));
+                        [options[j], options[k]] = [options[k], options[j]];
+                    }
+                    
+                    this.questions.push({
+                        uppercase: uppercase,
+                        lowercase: lowercase,
+                        options: options,
+                        correctAnswer: options.indexOf(lowercase)
+                    });
+                }
+                
+                this.totalQuestions = this.questions.length;
+            }
+
+            // 绑定事件
+            bindEvents() {
+                const nextBtn = document.getElementById('nextBtn');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                nextBtn.addEventListener('click', () => this.nextQuestion());
+                submitBtn.addEventListener('click', () => this.submitGame());
+            }
+
+            // 显示题目
+            displayQuestion() {
+                if (this.currentQuestionIndex >= this.totalQuestions) {
+                    this.submitGame();
+                    return;
+                }
+                
+                const question = this.questions[this.currentQuestionIndex];
+                const letterDisplay = document.getElementById('letterDisplay');
+                const optionsContainer = document.getElementById('optionsContainer');
+                
+                // 显示大写字母
+                letterDisplay.textContent = question.uppercase;
+                
+                // 生成选项
+                optionsContainer.innerHTML = '';
+                question.options.forEach((option, index) => {
+                    const optionElement = document.createElement('div');
+                    optionElement.className = 'option';
+                    optionElement.textContent = option;
+                    optionElement.dataset.index = index;
+                    optionElement.addEventListener('click', (e) => this.selectOption(e));
+                    optionsContainer.appendChild(optionElement);
+                });
+                
+                // 更新进度条
+                this.updateProgress();
+            }
+
+            // 选择选项
+            selectOption(e) {
+                // 移除其他选项的选中状态
+                const options = document.querySelectorAll('.option');
+                options.forEach(opt => opt.classList.remove('selected'));
+                
+                // 添加当前选项的选中状态
+                const selectedOption = e.target;
+                selectedOption.classList.add('selected');
+                
+                // 保存选中答案
+                this.selectedAnswers[this.currentQuestionIndex] = parseInt(selectedOption.dataset.index);
+            }
+
+            // 下一题
+            nextQuestion() {
+                // 检查是否已选择答案
+                if (this.selectedAnswers[this.currentQuestionIndex] === undefined) {
+                    alert('请选择一个答案');
+                    return;
+                }
+                
+                // 检查答案是否正确
+                const question = this.questions[this.currentQuestionIndex];
+                if (this.selectedAnswers[this.currentQuestionIndex] === question.correctAnswer) {
+                    this.correctAnswers++;
+                    // 显示正确答案
+                    this.showCorrectAnswer();
+                } else {
+                    // 显示正确答案和错误选择
+                    this.showCorrectAnswer();
+                }
+                
+                // 更新得分显示
+                this.updateScore();
+                
+                // 延迟进入下一题
+                setTimeout(() => {
+                    this.currentQuestionIndex++;
+                    this.displayQuestion();
+                }, 1000);
+            }
+
+            // 显示正确答案
+            showCorrectAnswer() {
+                const options = document.querySelectorAll('.option');
+                const question = this.questions[this.currentQuestionIndex];
+                
+                options.forEach((option, index) => {
+                    if (index === question.correctAnswer) {
+                        option.classList.add('correct');
+                    } else if (index === this.selectedAnswers[this.currentQuestionIndex]) {
+                        option.classList.add('incorrect');
+                    }
+                });
+            }
+
+            // 更新进度条
+            updateProgress() {
+                const progressBar = document.querySelector('.progress-bar');
+                const progress = ((this.currentQuestionIndex + 1) / this.totalQuestions) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            // 更新得分显示
+            updateScore() {
+                const scoreDisplay = document.querySelector('.score-display');
+                scoreDisplay.textContent = `得分: ${this.correctAnswers}/${this.totalQuestions}`;
+            }
+
+            // 提交游戏
+            submitGame() {
+                // 计算最终得分
+                const score = (this.correctAnswers / this.totalQuestions) * 100;
+                const finalScore = parseFloat(score.toFixed(1));
+                
+                // 向主界面发送游戏完成消息
+                window.parent.postMessage({
+                    type: 'gameComplete',
+                    score: finalScore
+                }, '*');
+            }
+        }
+        
+        // 初始化游戏
+        document.addEventListener('DOMContentLoaded', () => {
+            new LetterMatchingGame();
+        });
+    </script>
+</body>
+</html>

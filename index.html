@@ -3,297 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>游戏主界面</title>
-    <style>
-        body {
-            font-family: "Microsoft YaHei", sans-serif;
-            background-image: url('风格图片.png');
-            background-size: 50%;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .container {
-            max-width: 800px;
-            width: 90%;
-            background-color: transparent;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            padding: 40px;
-            text-align: center;
-            margin: 20px;
-        }
-        
-        h1 {
-            color: #ffffff;
-            font-size: 32px;
-            margin-bottom: 20px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
-            animation: pulse 2s infinite;
-        }
-        
-        .subtitle {
-            font-size: 18px;
-            color: #ffffff;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        
-        .file-info {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #ffffff;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        
-        h1 {
-            color: #e74c3c;
-            font-size: 32px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        
-        .subtitle {
-            font-size: 18px;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-        
-        .game-list {
-            margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .game-item {
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            padding: 20px 30px;
-            border-radius: 12px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            text-align: left;
-            position: relative;
-            overflow: hidden;
-            font-weight: bold;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.5s ease forwards;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .game-item:nth-child(1) { animation-delay: 0.1s; }
-        .game-item:nth-child(2) { animation-delay: 0.2s; }
-        .game-item:nth-child(3) { animation-delay: 0.3s; }
-        .game-item:nth-child(4) { animation-delay: 0.4s; }
-        .game-item:nth-child(5) { animation-delay: 0.5s; }
-        .game-item:nth-child(6) { animation-delay: 0.6s; }
-        
-        .game-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-            background: rgba(76, 175, 80, 1);
-            border-color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .game-item:active {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        
-        .game-item::after {
-            content: '→';
-            position: absolute;
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .game-item:hover::after {
-            opacity: 1;
-            right: 20px;
-        }
-        
-        .loading {
-            font-size: 18px;
-            color: #7f8c8d;
-            padding: 30px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        .footer {
-            margin-top: 40px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 16px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        }
-        
-        .file-info {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 30px 20px;
-            }
-            
-            h1 {
-                font-size: 24px;
-            }
-            
-            .game-item {
-                padding: 15px 20px;
-                font-size: 16px;
-            }
-        }
-    </style>
+    <title>智慧糟老头 - 游戏化学习</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>“智慧糟老头”邀请你玩游戏来了！</h1>
-        <p class="subtitle">点击下方游戏开始挑战吧！</p>
+        <h1 class="game-title">智慧糟老头邀请你来烧脑</h1>
         
-        <div class="game-list" id="gameList">
-            <div class="loading">正在加载游戏列表...</div>
+        <!-- 用户信息和退出按钮 -->
+        <div style="text-align: right; margin-bottom: 20px;">
+            <span id="userInfo" style="margin-right: 20px;"></span>
+            <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 16px; font-size: 14px;">退出登录</button>
         </div>
         
-        <div class="file-info" id="fileInfo"></div>
-    </div>
-    
-    <div class="footer">
-        <p>游戏主界面 · 自动识别目录中的HTML文件</p>
+        <!-- 学科选择区域 -->
+        <div class="subject-container">
+            <!-- 语文学科 -->
+            <div class="subject-card">
+                <h2 class="subject-title">语文</h2>
+                <select class="grade-select" id="chineseGrade">
+                    <option value="">选择年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                </select>
+                <div class="game-list" id="chineseGames"></div>
+            </div>
+            
+            <!-- 数学学科 -->
+            <div class="subject-card">
+                <h2 class="subject-title">数学</h2>
+                <select class="grade-select" id="mathGrade">
+                    <option value="">选择年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                </select>
+                <div class="game-list" id="mathGames"></div>
+            </div>
+            
+            <!-- 品德学科 -->
+            <div class="subject-card">
+                <h2 class="subject-title">品德</h2>
+                <select class="grade-select" id="moralityGrade">
+                    <option value="">选择年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                </select>
+                <div class="game-list" id="moralityGames"></div>
+            </div>
+            
+            <!-- 英语学科 -->
+            <div class="subject-card">
+                <h2 class="subject-title">英语</h2>
+                <select class="grade-select" id="englishGrade">
+                    <option value="">选择年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                </select>
+                <div class="game-list" id="englishGames"></div>
+            </div>
+            
+            <!-- 科学学科 -->
+            <div class="subject-card">
+                <h2 class="subject-title">科学</h2>
+                <select class="grade-select" id="scienceGrade">
+                    <option value="">选择年级</option>
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                    <option value="4">四年级</option>
+                    <option value="5">五年级</option>
+                    <option value="6">六年级</option>
+                </select>
+                <div class="game-list" id="scienceGames"></div>
+            </div>
+        </div>
+        
+        <!-- 游戏显示区域 -->
+        <div style="margin-top: 30px; display: none;" id="gamePlayArea">
+            <h2 style="text-align: center; margin-bottom: 20px;">游戏进行中</h2>
+            <iframe class="game-container" id="gameIframe" src=""></iframe>
+            
+            <!-- 得分和评价区域 -->
+            <div class="score-container" id="scoreContainer" style="display: none;">
+                <h3>游戏结果</h3>
+                <div class="score-value" id="scoreValue">0.0</div>
+                <div class="evaluation" id="evaluation"></div>
+                <button class="btn btn-primary" style="margin-top: 20px;" id="backBtn">返回学科选择</button>
+            </div>
+        </div>
+        
+        <!-- 学习记录查看按钮 -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-primary" id="viewRecordsBtn">查看学习记录</button>
+        </div>
     </div>
 
-    <script>
-        // 自动识别目录中的HTML文件并生成链接
-        function loadGameList() {
-            const gameList = document.getElementById('gameList');
-            const fileInfo = document.getElementById('fileInfo');
-            gameList.innerHTML = '';
-            
-            // 从目录结构中确认存在的HTML文件列表
-            const existingHtmlFiles = [
-                '第一版（只有一个地球）.html',
-                '青山不老.html',
-                '青山不老（最终版）.html',
-                '三黑和土地.html',
-                '习作：学写倡议书.html',
-                '图形化游戏.html'
-            ];
-            
-            // 过滤掉主界面自身
-            const gameFiles = existingHtmlFiles.filter(file => 
-                file.toLowerCase() !== '游戏主界面.html' && file.toLowerCase().endsWith('.html')
-            );
-            
-            if (gameFiles.length === 0) {
-                gameList.innerHTML = '<p style="color: #e74c3c; font-size: 18px;">未找到可玩的游戏文件！</p>';
-                fileInfo.textContent = '请确保HTML游戏文件与主界面在同一目录下。';
-                return;
-            }
-            
-            // 为每个游戏文件创建链接按钮
-            gameFiles.forEach((gameFile, index) => {
-                // 创建游戏链接按钮
-                const gameItem = document.createElement('button');
-                gameItem.className = 'game-item';
-                gameItem.textContent = getGameTitle(gameFile);
-                gameItem.setAttribute('data-file', gameFile);
-                
-                // 添加点击事件
-                gameItem.onclick = function() {
-                    try {
-                        // 尝试在新标签页打开游戏文件
-                        window.open(gameFile, '_blank');
-                    } catch (error) {
-                        console.error('打开文件失败:', error);
-                        alert('无法打开游戏文件: ' + gameFile);
-                    }
-                };
-                
-                gameList.appendChild(gameItem);
-            });
-            
-            // 显示文件信息
-            fileInfo.textContent = `共发现 ${gameFiles.length} 个游戏文件`;
-        }
-        
-        // 根据文件名提取游戏标题
-        function getGameTitle(filename) {
-            // 移除文件扩展名
-            let title = filename.replace(/\.html$/i, '');
-            
-            // 美化标题显示
-            if (title.includes('（') && title.includes('）')) {
-                const parts = title.split('（');
-                return `${parts[0]} ${parts.slice(1).join('（').replace('）', '')}`;
-            }
-            
-            return title;
-        }
-        
-        // 移除了原有的verifyFilesExist函数，因为文件存在性验证已在loadGameList函数中实现
-        // 每次刷新时都会自动检查文件是否存在
-        
-        // 移除右键菜单添加功能，避免添加不存在的文件
-        function setupDynamicFileDetection() {
-            // 不再自动添加可能不存在的文件
-            console.log('游戏列表已加载完成。只显示目录中已知存在的HTML文件。');
-        }
-        
-        // 页面加载时执行
-        window.onload = function() {
-            // 添加延迟以确保动画效果正常显示
-            setTimeout(() => {
-                loadGameList();
-                setupDynamicFileDetection();
-            }, 300);
-        };
-        
-        // 添加键盘快捷键支持
-        document.addEventListener('keydown', function(event) {
-            // 如果按下数字键1-9，尝试打开对应位置的游戏
-            const keyNum = parseInt(event.key);
-            if (keyNum >= 1 && keyNum <= 9) {
-                const gameItems = document.querySelectorAll('.game-item');
-                if (gameItems[keyNum - 1]) {
-                    gameItems[keyNum - 1].click();
-                }
-            }
-        });
-    </script>
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="js/data/studentDB.js"></script>
+    <script src="js/login.js"></script>
+    <script src="js/data/gameConfig.js"></script>
+    <script src="js/utils/storage.js"></script>
+    <script src="js/utils/scoring.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
